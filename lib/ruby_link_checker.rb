@@ -25,6 +25,7 @@ class RubyLinkChecker
     self.counts = {
       source_pages: 0,
       offsite_pages: 0,
+      links_found: 0,
       links_checked: 0,
       links_broken: 0,
     }
@@ -36,7 +37,7 @@ class RubyLinkChecker
     pages_pending << ''
     # Work on the pendings.
     until pages_pending.empty?
-      break if pages.size > 10
+      # break if pages.size > 100
       # Take the next pending page; skip if already done.
       path = pages_pending.shift
       next if pages[path]
@@ -45,7 +46,7 @@ class RubyLinkChecker
       pages[path] = page
       # Pend any new paths.
       page.links.each do |link|
-        counts[:links_checked] += 1
+        counts[:links_found] += 1
         path = link.href
         # Skip if offsite.
         if path.start_with?('http')
@@ -169,6 +170,7 @@ EOT
     data = [
       {'Source Pages' => :label, pages.size => :good},
       {'Offsite Pages' => :label, counts[:offsite_pages] => :good},
+      {'Links Found' => :label, counts[:links_found] => :good},
       {'Links Checked' => :label, counts[:links_checked] => :good},
       {'Links Broken' => :label, counts[:links_broken] => :bad},
     ]

@@ -25,7 +25,8 @@ class RubyLinkChecker
     self.counts = {
       source_pages: 0,
       offsite_pages: 0,
-      links_found: 0,
+      onsite_links_found: 0,
+      offsite_links_found: 0,
       links_checked: 0,
       links_broken: 0,
     }
@@ -37,7 +38,7 @@ class RubyLinkChecker
     pages_pending << ''
     # Work on the pendings.
     until pages_pending.empty?
-      # break if pages.size > 100
+      break if pages.size >= 10
       # Take the next pending page; skip if already done.
       path = pages_pending.shift
       next if pages[path]
@@ -46,13 +47,12 @@ class RubyLinkChecker
       pages[path] = page
       # Pend any new paths.
       page.links.each do |link|
-        counts[:links_found] += 1
-        path = link.href
-        # Skip if offsite.
-        if path.start_with?('http')
-          counts[:offsite_pages] += 1
-          next
+        if link.offsite?
+          counts[:offsite_links_found] += 1
+        else
+          counts[:onsite_links_found] += 1
         end
+        path = link.href
         # Remove leading junk.
         path = link.href.sub(%r:^[\./]*:, '')
         # We're on https://docs.ruby-lang.org/en/; don't do the other releases.
@@ -170,7 +170,8 @@ EOT
     data = [
       {'Source Pages' => :label, pages.size => :good},
       {'Offsite Pages' => :label, counts[:offsite_pages] => :good},
-      {'Links Found' => :label, counts[:links_found] => :good},
+      {'Onsite Links Found' => :label, counts[:onsite_links_found] => :good},
+      {'Offsite Links Found' => :label, counts[:offsite_links_found] => :good},
       {'Links Checked' => :label, counts[:links_checked] => :good},
       {'Links Broken' => :label, counts[:links_broken] => :bad},
     ]
@@ -178,6 +179,12 @@ EOT
     body.add_element(Element.new('p'))
 
   end
+
+  # Returns whether the path is offsite.
+  def self.offsite?(path)
+    path.start_with?('http')
+  end
+
   class Page
 
     attr_accessor :path, :links, :ids, :exceptions
@@ -209,19 +216,14 @@ EOT
         exception = HTTPResponseException.new(message, 'uri', uri, x)
         exceptions << exception
       end
-      # Don't gather links if bad code, or not html, or off-site.
+      # Don't gather links if bad code, or not html, or offsite.
       return if code_bad?(response)
       return unless content_type_html?(response)
-      return if off_site?(path)
+      return if RubyLinkChecker.offsite?(path)
       # Get the HTML body.
       body = response.body
       gather_links(body)
       gather_ids(body)
-    end
-
-    # Returns whether the path is off-site.
-    def off_site?(path)
-      path.start_with?('http')
     end
 
     # Returns whether the code is bad (zero or >= 400).
@@ -288,11 +290,6 @@ EOT
       anchors
     end
 
-    # Returns whether the page is offsite.
-    def offsite?
-      self.path.start_with?('http')
-    end
-
     def gather_ids(body)
       body.lines.each do |line|
         line.chomp!
@@ -318,6 +315,10 @@ EOT
       self.lineno = lineno
       self.href = href
       self.text = text.nil? ? '' : text.strip
+    end
+
+    def offsite?
+      RubyLinkChecker.offsite?(href)
     end
   end
 

@@ -35,16 +35,17 @@ class RubyLinkChecker
   def check_links
     counts[:start_time] = Time.new
     # Seed pending with base url.
-    pages_pending << ''
+    pages_pending << 'Math.html'
     # Work on the pendings.
     until pages_pending.empty?
-      break if pages.size >= 10
+      # break if pages.size >= 1231
       # Take the next pending page; skip if already done.
       path = pages_pending.shift
       next if pages[path]
       # New page.
       page = Page.new(path)
       pages[path] = page
+      # p [pages.size, pages_pending.size, path]
       # Pend any new paths.
       page.links.each do |link|
         if link.offsite?
@@ -53,22 +54,22 @@ class RubyLinkChecker
           counts[:onsite_links_found] += 1
         end
         path = link.href
-        # Remove leading junk.
-        path = link.href.sub(%r:^[\./]*:, '')
-        # We're on https://docs.ruby-lang.org/en/; don't do the other releases.
+        # Done if we're on https://docs.ruby-lang.org/en/; don't do the other releases.
         break if path == 'master/'
-        # Discard the fragment, if any.
-        path, _ = path.split('#', 2)
+        next if path.start_with?('#')
+        path, _ = path.split('#')
+        path.sub!(%r[/$], '')
         # Skip if already done or pending.
         next if pages.include?(path)
         next if pages_pending.include?(path)
         # Pend it.
+        # puts '  ' + path
         pages_pending.push(path)
       end
     end
     counts[:end_time] = Time.new
     generate_report
-        pages.keys.sort.each do |path|
+    pages.keys.sort.each do |path|
       # page = pages[path]
       # page.links.each do |link|
       #   p link
@@ -182,9 +183,8 @@ EOT
 
   # Returns whether the path is offsite.
   def self.offsite?(path)
-    path.start_with?('http')
+    path.match(%r[^[a-z]*://]) # http, ftp, etc.
   end
-
   class Page
 
     attr_accessor :path, :links, :ids, :exceptions
@@ -195,7 +195,7 @@ EOT
       self.ids = []
       self.exceptions = []
       # Form URL.
-      url = if path.start_with?('http')
+      url = if RubyLinkChecker.offsite?(path)
               path
             else
               File.join(BASE_URL, path)
@@ -223,7 +223,7 @@ EOT
       # Get the HTML body.
       body = response.body
       gather_links(body)
-      gather_ids(body)
+      # gather_ids(body)
     end
 
     # Returns whether the code is bad (zero or >= 400).
@@ -265,6 +265,9 @@ EOT
           begin
             doc = REXML::Document.new(anchor)
             href = doc.root.attributes['href']
+            href.sub!(%r:^[/\.]*:, '')
+            next if href.match(/^LEGAL/)
+            next if href.match(/^NEWS/)
             text = doc.root.text
             link = Link.new(path, lineno, href, text)
             links.push(link)

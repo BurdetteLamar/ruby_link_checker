@@ -12,16 +12,16 @@ class RubyLinkChecker
   BASE_URL = 'https://docs.ruby-lang.org/en/master'
 
   # Hash of Page objects by path.
-  attr_accessor :pages
+  attr_accessor :source_pages
 
   # Array of paths yet to be processed.
-  attr_accessor :pages_pending
+  attr_accessor :pending_pages
 
   attr_accessor :counts
   
   def initialize
-    self.pages = {}
-    self.pages_pending = []
+    self.source_pages = {}
+    self.pending_pages = []
     self.counts = {
       source_pages: 0,
       offsite_pages: 0,
@@ -35,42 +35,42 @@ class RubyLinkChecker
   def check_links
     counts[:start_time] = Time.new
     # Seed pending with base url.
-    pages_pending << 'Math.html'
+    pending_pages << ''
     # Work on the pendings.
-    until pages_pending.empty?
-      # break if pages.size >= 1231
+    until pending_pages.empty?
+      # break if source_pages.size >= 1231
       # Take the next pending page; skip if already done.
-      path = pages_pending.shift
-      next if pages[path]
+      path = pending_pages.shift
+      next if source_pages[path]
       # New page.
       page = Page.new(path)
-      pages[path] = page
-      # p [pages.size, pages_pending.size, path]
+      source_pages[path] = page
+      $stderr.puts "#{source_pages.size} #{pending_pages.size} #{path}"
       # Pend any new paths.
       page.links.each do |link|
-        if link.offsite?
-          counts[:offsite_links_found] += 1
-        else
+        if RubyLinkChecker.onsite?(link.href)
           counts[:onsite_links_found] += 1
+        else
+          counts[:offsite_links_found] += 1
         end
-        path = link.href
+        href = link.href
         # Done if we're on https://docs.ruby-lang.org/en/; don't do the other releases.
-        break if path == 'master/'
-        next if path.start_with?('#')
+        break if href == 'master/'
+        next if href.start_with?('#')
+        path = href.sub(%r[^[\./]*], '').sub(%r[/$], '')
+        next if path.match(/^(LEGAL|NEWS|mailto)/)
         path, _ = path.split('#')
-        path.sub!(%r[/$], '')
-        # Skip if already done or pending.
-        next if pages.include?(path)
-        next if pages_pending.include?(path)
+        # Skip if done or pending.
+        next if source_pages.include?(path)
+        next if pending_pages.include?(path)
         # Pend it.
-        # puts '  ' + path
-        pages_pending.push(path)
+        pending_pages.push(path)
       end
     end
     counts[:end_time] = Time.new
     generate_report
-    pages.keys.sort.each do |path|
-      # page = pages[path]
+    source_pages.keys.sort.each do |path|
+      # page = source_pages[path]
       # page.links.each do |link|
       #   p link
       # end
@@ -105,6 +105,7 @@ EOT
     h1 = body.add_element(Element.new('h1'))
     h1.text = 'RDocLinkChecker Report'
     add_summary(body)
+    add_pages(body)
 
     doc.write($stdout, 2)
   end
@@ -169,7 +170,7 @@ EOT
 
     # Counts.
     data = [
-      {'Source Pages' => :label, pages.size => :good},
+      {'Onsite Pages' => :label, source_pages.size => :good},
       {'Offsite Pages' => :label, counts[:offsite_pages] => :good},
       {'Onsite Links Found' => :label, counts[:onsite_links_found] => :good},
       {'Offsite Links Found' => :label, counts[:offsite_links_found] => :good},
@@ -181,10 +182,33 @@ EOT
 
   end
 
-  # Returns whether the path is offsite.
-  def self.offsite?(path)
-    path.match(%r[^[a-z]*://]) # http, ftp, etc.
+  def add_pages(body)
+    h2 = body.add_element(Element.new('h2'))
+    h2.text = 'Source Pages'
+    source_pages.keys.sort.each do |path, page|
+      broken_links = []
+      page_div = body.add_element(Element.new('div'))
+      page_div.add_attribute('class', 'broken_page')
+      page_div.add_attribute('path', path)
+      page_div.add_attribute('count', broken_links.count)
+      h3 = page_div.add_element(Element.new('h3'))
+      a = Element.new('a')
+      a.text = "#{path} (#{broken_links.count})"
+      a.add_attribute('href', File.join(BASE_URL, path))
+      h3.add_element(a)
+    end
   end
+
+  SchemeList = URI.scheme_list.keys.map {|scheme| scheme.downcase}
+
+  # Returns whether the path is onsite.
+  def self.onsite?(path)
+    return true if path == ''
+    return false unless path.match(/\w/)
+    potential_scheme = path.match(/\w*/).to_s
+    !SchemeList.include?(potential_scheme)
+  end
+
   class Page
 
     attr_accessor :path, :links, :ids, :exceptions
@@ -195,10 +219,10 @@ EOT
       self.ids = []
       self.exceptions = []
       # Form URL.
-      url = if RubyLinkChecker.offsite?(path)
-              path
-            else
+      url = if RubyLinkChecker.onsite?(path)
               File.join(BASE_URL, path)
+            else
+              path
             end
       # Parse the url.
       begin
@@ -216,10 +240,10 @@ EOT
         exception = HTTPResponseException.new(message, 'uri', uri, x)
         exceptions << exception
       end
-      # Don't gather links if bad code, or not html, or offsite.
+      # Don't gather links if bad code, or not html, or not onsite.
       return if code_bad?(response)
       return unless content_type_html?(response)
-      return if RubyLinkChecker.offsite?(path)
+      return unless RubyLinkChecker.onsite?(path)
       # Get the HTML body.
       body = response.body
       gather_links(body)
@@ -265,11 +289,8 @@ EOT
           begin
             doc = REXML::Document.new(anchor)
             href = doc.root.attributes['href']
-            href.sub!(%r:^[/\.]*:, '')
-            next if href.match(/^LEGAL/)
-            next if href.match(/^NEWS/)
             text = doc.root.text
-            link = Link.new(path, lineno, href, text)
+            link = Link.new(lineno, href, text)
             links.push(link)
           rescue REXML::ParseException => x
             message = "REXML::Document.new(anchor) failed for #{anchor}."
@@ -312,17 +333,13 @@ EOT
   end
 
   class Link
-    attr_accessor :path, :lineno, :href, :text
-    def initialize(path, lineno, href, text)
-      self.path = path
+    attr_accessor :lineno, :href, :text
+    def initialize(lineno, href, text)
       self.lineno = lineno
       self.href = href
       self.text = text.nil? ? '' : text.strip
     end
 
-    def offsite?
-      RubyLinkChecker.offsite?(href)
-    end
   end
 
   class RubyLinkCheckerException < Exception

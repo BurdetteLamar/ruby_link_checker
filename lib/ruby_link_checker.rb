@@ -12,13 +12,13 @@ class RubyLinkChecker
   BASE_URL = 'https://docs.ruby-lang.org/en/master'
 
   # Hash of Page objects by path.
-  attr_accessor :source_pages
+  attr_accessor :source_pages, :offsite_pages
 
   # Array of paths yet to be processed.
   attr_accessor :pending_pages
 
   attr_accessor :counts
-  
+
   def initialize
     self.source_pages = {}
     self.pending_pages = []
@@ -31,7 +31,7 @@ class RubyLinkChecker
       links_broken: 0,
     }
   end
-  
+
   def check_links
     counts[:start_time] = Time.new
     # Seed pending with base url.
@@ -44,8 +44,11 @@ class RubyLinkChecker
       next if source_pages[path]
       # New page.
       page = Page.new(path)
-      source_pages[path] = page
-      $stderr.puts "#{source_pages.size} #{pending_pages.size} #{path}"
+      if RubyLinkChecker.onsite?(path)
+        source_pages[path] = page
+      else
+        counts[:offsite_pages] += 1
+      end
       # Pend any new paths.
       page.links.each do |link|
         if RubyLinkChecker.onsite?(link.href)
@@ -55,21 +58,26 @@ class RubyLinkChecker
         end
         href = link.href
         # Done if we're on https://docs.ruby-lang.org/en/; don't do the other releases.
-        break if href == 'master/'
+        break if href == 'master'
         next if href.start_with?('#')
-        path = href.sub(%r[^[\./]*], '').sub(%r[/$], '')
+        path = href.sub(%r[^\./], '').sub(%r[/$], '')
         next if path.match(/^(LEGAL|NEWS|mailto)/)
         path, _ = path.split('#')
+        stem = link.stem
+        if RubyLinkChecker.onsite?(path) && stem != '.'
+          path = File.join(stem, path)
+        end
         # Skip if done or pending.
         next if source_pages.include?(path)
         next if pending_pages.include?(path)
         # Pend it.
+        # $stderr.puts "    #{path}"
         pending_pages.push(path)
       end
     end
     counts[:end_time] = Time.new
     generate_report
-    source_pages.keys.sort.each do |path|
+    # source_pages.keys.sort.each do |path|
       # page = source_pages[path]
       # page.links.each do |link|
       #   p link
@@ -82,7 +90,7 @@ class RubyLinkChecker
       #   p exception.exception_class
       #   p exception.exception_message
       # end
-    end
+    # end
   end
 
   def generate_report
@@ -106,7 +114,6 @@ EOT
     h1.text = 'RDocLinkChecker Report'
     add_summary(body)
     add_pages(body)
-
     doc.write($stdout, 2)
   end
 
@@ -185,17 +192,23 @@ EOT
   def add_pages(body)
     h2 = body.add_element(Element.new('h2'))
     h2.text = 'Source Pages'
-    source_pages.keys.sort.each do |path, page|
-      broken_links = []
-      page_div = body.add_element(Element.new('div'))
-      page_div.add_attribute('class', 'broken_page')
-      page_div.add_attribute('path', path)
-      page_div.add_attribute('count', broken_links.count)
-      h3 = page_div.add_element(Element.new('h3'))
+    source_pages.keys.sort.each do |path|
+      page = source_pages[path]
+      next unless RubyLinkChecker.onsite?(path)
+      next if page.exceptions.empty?
+      div = body.add_element(Element.new('div'))
+      div.add_attribute('class', 'broken_page')
+      div.add_attribute('path', path)
+      div.add_attribute('count', page.exceptions.size)
+      h3 = div.add_element(Element.new('h3'))
       a = Element.new('a')
-      a.text = "#{path} (#{broken_links.count})"
+      a.text = "#{path} (#{page.exceptions.size})"
       a.add_attribute('href', File.join(BASE_URL, path))
       h3.add_element(a)
+      page.exceptions.each do |e|
+        p = body.add_element(Element.new('p'))
+        p.text = e.inspect
+      end
     end
   end
 
@@ -204,26 +217,28 @@ EOT
   # Returns whether the path is onsite.
   def self.onsite?(path)
     return true if path == ''
-    return false unless path.match(/\w/)
-    potential_scheme = path.match(/\w*/).to_s
+    return false unless path.match(/^[a-zA-Z]/)
+    potential_scheme = path.match(/^\w*/).to_s
     !SchemeList.include?(potential_scheme)
   end
 
   class Page
 
-    attr_accessor :path, :links, :ids, :exceptions
+    attr_accessor :path, :links, :ids, :exceptions, :found
 
     def initialize(path)
       self.path = path
       self.links = []
       self.ids = []
       self.exceptions = []
+      self.found = false
       # Form URL.
       url = if RubyLinkChecker.onsite?(path)
               File.join(BASE_URL, path)
             else
               path
             end
+      $stderr.puts(url)
       # Parse the url.
       begin
         uri = URI(url)
@@ -235,6 +250,7 @@ EOT
       # Get the response.
       begin
         response =  Net::HTTP.get_response(uri)
+        found = true
       rescue => x
         message = "Net::HTTP.get_response(uri) failed for #{uri}."
         exception = HTTPResponseException.new(message, 'uri', uri, x)
@@ -246,8 +262,8 @@ EOT
       return unless RubyLinkChecker.onsite?(path)
       # Get the HTML body.
       body = response.body
-      gather_links(body)
-      # gather_ids(body)
+      gather_links(path, body)
+      gather_ids(body)
     end
 
     # Returns whether the code is bad (zero or >= 400).
@@ -266,7 +282,7 @@ EOT
     end
 
     # Gathers links from the page body.
-    def gather_links(body)
+    def gather_links(path, body)
       lines = body.lines
       # Some links are multi-line; i.e., '<a ... >' and '</a>' are not on the same line.
       # Therefore we capture a possibly multi-line snippet containing both.
@@ -286,11 +302,12 @@ EOT
         end
         # Use REXML to parse each anchor.
         get_anchors(snippet).each do |anchor|
+          next if anchor.match('<img ')
           begin
             doc = REXML::Document.new(anchor)
             href = doc.root.attributes['href']
             text = doc.root.text
-            link = Link.new(lineno, href, text)
+            link = Link.new(path, lineno, href, text)
             links.push(link)
           rescue REXML::ParseException => x
             message = "REXML::Document.new(anchor) failed for #{anchor}."
@@ -317,7 +334,13 @@ EOT
     def gather_ids(body)
       body.lines.each do |line|
         line.chomp!
-        next unless line.match(%r:<\w+ id=":)
+        next if line.match('footmark')
+        next if line.match('foottext')
+        next unless line.match(%r:<(\w+) id=":)
+        end_tag = "</#{$1}>"
+        line += '>' unless line.end_with?('>')
+        line += end_tag unless line.end_with?(end_tag)
+        line.sub!(' hidden', ' hidden="true"')
         begin
           doc = REXML::Document.new(line)
           id = doc.root.attributes['id']
@@ -333,13 +356,18 @@ EOT
   end
 
   class Link
-    attr_accessor :lineno, :href, :text
-    def initialize(lineno, href, text)
+    attr_accessor :stem, :lineno, :href, :text
+    def initialize(linker, lineno, href, text)
       self.lineno = lineno
-      self.href = href
       self.text = text.nil? ? '' : text.strip
+      dirname = File.dirname(linker)
+      while href.start_with?('../') do
+        href.sub!('../', '')
+        dirname = File.dirname(dirname)
+      end
+      self.href = href
+      self.stem = dirname
     end
-
   end
 
   class RubyLinkCheckerException < Exception

@@ -197,20 +197,27 @@ EOT
     def add_offsite_pages(body)
       h2 = body.add_element(Element.new('h2'))
       h2.text = 'Offsite Pages'
-      offsite_pages.keys.sort.each do |path|
-        page = offsite_pages[path]
-        div = body.add_element(Element.new('div'))
-        div.add_attribute('class', 'broken_page')
-        div.add_attribute('path', path)
-        div.add_attribute('count', page.exceptions.size)
-        h3 = div.add_element(Element.new('h3'))
-        a = Element.new('a')
-        a.text = "#{path} (#{page.exceptions.size})"
-        a.add_attribute('href', path)
-        h3.add_element(a)
-        page.exceptions.each do |e|
-          p = body.add_element(Element.new('p'))
-          p.text = e.inspect
+      paths_by_url = {}
+      offsite_pages.each_pair do |path, page|
+        next unless page.found
+        uri = URI(path)
+        url = File.join(uri.scheme + '://', uri.hostname)
+        paths_by_url[url] = [] unless paths_by_url[url]
+        paths_by_url[url].push(uri.path)
+      end
+      paths_by_url.keys.sort.each do |url|
+        h3 = body.add_element(Element.new('h3'))
+        a = h3.add_element(Element.new('a'))
+        a.text = url
+        a.add_attribute('href', url)
+        paths = paths_by_url[url]
+        next if paths.empty?
+        ul = body.add_element(Element.new('ul'))
+        paths.sort.each do |path|
+          li = ul.add_element(Element.new('li'))
+          a = li.add_element(Element.new('a'))
+          a.text = path
+          a.add_attribute('href', File.join(url, path))
         end
       end
     end

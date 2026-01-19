@@ -21,10 +21,9 @@ class RubyLinkChecker
 
   def initialize
     self.onsite_pages = {}
+    self.offsite_pages = {}
     self.pending_pages = []
     self.counts = {
-      onsite_pages: 0,
-      offsite_pages: 0,
       onsite_links_found: 0,
       offsite_links_found: 0,
       links_checked: 0,
@@ -38,17 +37,16 @@ class RubyLinkChecker
     pending_pages << ''
     # Work on the pendings.
     until pending_pages.empty?
-      # break if onsite_pages.size >= 1231
       # Take the next pending page; skip if already done.
       path = pending_pages.shift
       next if onsite_pages[path]
       # New page.
       page = Page.new(path)
-      next unless page.found
       if RubyLinkChecker.onsite?(path)
+        next unless page.found
         onsite_pages[path] = page
       else
-        counts[:offsite_pages] += 1
+        offsite_pages[path] = page
       end
       # Pend any new paths.
       page.links.each do |link|
@@ -70,6 +68,7 @@ class RubyLinkChecker
         end
         # Skip if done or pending.
         next if onsite_pages.include?(path)
+        next if offsite_pages.include?(path)
         next if pending_pages.include?(path)
         # Pend it.
         pending_pages.push(path)
@@ -77,20 +76,6 @@ class RubyLinkChecker
     end
     counts[:end_time] = Time.new
     generate_report
-    # onsite_pages.keys.sort.each do |path|
-      # page = onsite_pages[path]
-      # page.links.each do |link|
-      #   p link
-      # end
-      # page.exceptions.each do |exception|
-      #   p exception.class
-      #   p exception.message
-      #   p exception.argname
-      #   p exception.argvalue
-      #   p exception.exception_class
-      #   p exception.exception_message
-      # end
-    # end
   end
 
   def generate_report
@@ -113,7 +98,8 @@ EOT
     h1 = body.add_element(Element.new('h1'))
     h1.text = 'RDocLinkChecker Report'
     add_summary(body)
-    add_pages(body)
+    add_onsite_pages(body)
+    add_offsite_pages(body)
     doc.write($stdout, 2)
   end
 
@@ -178,7 +164,7 @@ EOT
     # Counts.
     data = [
       {'Onsite Pages' => :label, onsite_pages.size => :good},
-      {'Offsite Pages' => :label, counts[:offsite_pages] => :good},
+      {'Offsite Pages' => :label, offsite_pages.size => :good},
       {'Onsite Links Found' => :label, counts[:onsite_links_found] => :good},
       {'Offsite Links Found' => :label, counts[:offsite_links_found] => :good},
       {'Links Checked' => :label, counts[:links_checked] => :good},
@@ -187,29 +173,50 @@ EOT
     table2(body, data, 'counts', 'Counts')
     body.add_element(Element.new('p'))
 
-  end
-
-  def add_pages(body)
-    h2 = body.add_element(Element.new('h2'))
-    h2.text = 'Onsite Pages'
-    onsite_pages.keys.sort.each do |path|
-      page = onsite_pages[path]
-      next unless RubyLinkChecker.onsite?(path)
-      div = body.add_element(Element.new('div'))
-      div.add_attribute('class', 'broken_page')
-      div.add_attribute('path', path)
-      div.add_attribute('count', page.exceptions.size)
-      h3 = div.add_element(Element.new('h3'))
-      a = Element.new('a')
-      a.text = "#{path} (#{page.exceptions.size})"
-      a.add_attribute('href', File.join(BASE_URL, path))
-      h3.add_element(a)
-      page.exceptions.each do |e|
-        p = body.add_element(Element.new('p'))
-        p.text = e.inspect
+    def add_onsite_pages(body)
+      h2 = body.add_element(Element.new('h2'))
+      h2.text = 'Onsite Pages'
+      onsite_pages.keys.sort.each do |path|
+        page = onsite_pages[path]
+        div = body.add_element(Element.new('div'))
+        div.add_attribute('class', 'broken_page')
+        div.add_attribute('path', path)
+        div.add_attribute('count', page.exceptions.size)
+        h3 = div.add_element(Element.new('h3'))
+        a = Element.new('a')
+        a.text = "#{path} (#{page.exceptions.size})"
+        a.add_attribute('href', File.join(BASE_URL, path))
+        h3.add_element(a)
+        page.exceptions.each do |e|
+          p = body.add_element(Element.new('p'))
+          p.text = e.inspect
+        end
       end
     end
+
+    def add_offsite_pages(body)
+      h2 = body.add_element(Element.new('h2'))
+      h2.text = 'Offsite Pages'
+      offsite_pages.keys.sort.each do |path|
+        page = offsite_pages[path]
+        div = body.add_element(Element.new('div'))
+        div.add_attribute('class', 'broken_page')
+        div.add_attribute('path', path)
+        div.add_attribute('count', page.exceptions.size)
+        h3 = div.add_element(Element.new('h3'))
+        a = Element.new('a')
+        a.text = "#{path} (#{page.exceptions.size})"
+        a.add_attribute('href', path)
+        h3.add_element(a)
+        page.exceptions.each do |e|
+          p = body.add_element(Element.new('p'))
+          p.text = e.inspect
+        end
+      end
+    end
+
   end
+
 
   SchemeList = URI.scheme_list.keys.map {|scheme| scheme.downcase}
 

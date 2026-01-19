@@ -12,7 +12,7 @@ class RubyLinkChecker
   BASE_URL = 'https://docs.ruby-lang.org/en/master'
 
   # Hash of Page objects by path.
-  attr_accessor :source_pages, :offsite_pages
+  attr_accessor :onsite_pages, :offsite_pages
 
   # Array of paths yet to be processed.
   attr_accessor :pending_pages
@@ -20,10 +20,10 @@ class RubyLinkChecker
   attr_accessor :counts
 
   def initialize
-    self.source_pages = {}
+    self.onsite_pages = {}
     self.pending_pages = []
     self.counts = {
-      source_pages: 0,
+      onsite_pages: 0,
       offsite_pages: 0,
       onsite_links_found: 0,
       offsite_links_found: 0,
@@ -38,14 +38,15 @@ class RubyLinkChecker
     pending_pages << ''
     # Work on the pendings.
     until pending_pages.empty?
-      # break if source_pages.size >= 1231
+      # break if onsite_pages.size >= 1231
       # Take the next pending page; skip if already done.
       path = pending_pages.shift
-      next if source_pages[path]
+      next if onsite_pages[path]
       # New page.
       page = Page.new(path)
+      next unless page.found
       if RubyLinkChecker.onsite?(path)
-        source_pages[path] = page
+        onsite_pages[path] = page
       else
         counts[:offsite_pages] += 1
       end
@@ -68,17 +69,16 @@ class RubyLinkChecker
           path = File.join(stem, path)
         end
         # Skip if done or pending.
-        next if source_pages.include?(path)
+        next if onsite_pages.include?(path)
         next if pending_pages.include?(path)
         # Pend it.
-        # $stderr.puts "    #{path}"
         pending_pages.push(path)
       end
     end
     counts[:end_time] = Time.new
     generate_report
-    # source_pages.keys.sort.each do |path|
-      # page = source_pages[path]
+    # onsite_pages.keys.sort.each do |path|
+      # page = onsite_pages[path]
       # page.links.each do |link|
       #   p link
       # end
@@ -177,7 +177,7 @@ EOT
 
     # Counts.
     data = [
-      {'Onsite Pages' => :label, source_pages.size => :good},
+      {'Onsite Pages' => :label, onsite_pages.size => :good},
       {'Offsite Pages' => :label, counts[:offsite_pages] => :good},
       {'Onsite Links Found' => :label, counts[:onsite_links_found] => :good},
       {'Offsite Links Found' => :label, counts[:offsite_links_found] => :good},
@@ -191,11 +191,10 @@ EOT
 
   def add_pages(body)
     h2 = body.add_element(Element.new('h2'))
-    h2.text = 'Source Pages'
-    source_pages.keys.sort.each do |path|
-      page = source_pages[path]
+    h2.text = 'Onsite Pages'
+    onsite_pages.keys.sort.each do |path|
+      page = onsite_pages[path]
       next unless RubyLinkChecker.onsite?(path)
-      next if page.exceptions.empty?
       div = body.add_element(Element.new('div'))
       div.add_attribute('class', 'broken_page')
       div.add_attribute('path', path)
@@ -250,7 +249,7 @@ EOT
       # Get the response.
       begin
         response =  Net::HTTP.get_response(uri)
-        found = true
+        self.found = true
       rescue => x
         message = "Net::HTTP.get_response(uri) failed for #{uri}."
         exception = HTTPResponseException.new(message, 'uri', uri, x)

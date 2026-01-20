@@ -187,10 +187,15 @@ EOT
         end
         a.add_attribute('href', File.join(BASE_URL, path))
         h3.add_element(a)
-        page.exceptions.each do |e|
-          p = body.add_element(Element.new('p'))
-          p.text = e.inspect
-        end
+        onsite_links = page.links.select {|link| RubyLinkChecker.onsite?(link.stem) }
+        offsite_links = page.links - onsite_links
+        data = [
+          {'Onsite Links' => :label, onsite_links.size => :good},
+          {'Offsite Links' => :label, offsite_links.size => :good},
+          {'Exceptions' => :label, page.exceptions.size => :good},
+        ]
+        table2(body, data, "#{path}-summary", 'Summary')
+        body.add_element(Element.new('p'))
       end
     end
 

@@ -216,7 +216,7 @@ EOT
         paths.sort.each do |path|
           li = ul.add_element(Element.new('li'))
           a = li.add_element(Element.new('a'))
-          a.text = path
+          a.text = path.empty? ? url : path
           a.add_attribute('href', File.join(url, path))
         end
       end

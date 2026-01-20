@@ -203,7 +203,9 @@ EOT
         uri = URI(path)
         url = File.join(uri.scheme + '://', uri.hostname)
         paths_by_url[url] = [] unless paths_by_url[url]
-        paths_by_url[url].push(uri.path)
+        _path = uri.path
+        _path = "#{_path}?#{uri.query}" unless uri.query.nil?
+        paths_by_url[url].push(_path)
       end
       paths_by_url.keys.sort.each do |url|
         h3 = body.add_element(Element.new('h3'))

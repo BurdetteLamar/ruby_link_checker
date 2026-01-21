@@ -279,11 +279,11 @@ EOT
       # Don't gather links if bad code, or not html, or not onsite.
       return if code_bad?(response)
       return unless content_type_html?(response)
-      return unless RubyLinkChecker.onsite?(path)
       # Get the HTML body.
       body = response.body
-      gather_links(path, body)
       gather_ids(body)
+      $stderr.puts "    #{ids.size} #{path}"
+      gather_links(path, body) if RubyLinkChecker.onsite?(path)
     end
 
     # Returns whether the code is bad (zero or >= 400).
@@ -357,7 +357,7 @@ EOT
         line.chomp!
         next if line.match('footmark')
         next if line.match('foottext')
-        next unless line.match(%r:<(\w+) id=":)
+        next unless line.match(%r:<(\w+) id=:)
         end_tag = "</#{$1}>"
         line += '>' unless line.end_with?('>')
         line += end_tag unless line.end_with?(end_tag)

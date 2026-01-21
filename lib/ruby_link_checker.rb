@@ -56,8 +56,6 @@ class RubyLinkChecker
           counts[:offsite_links_found] += 1
         end
         href = link.href
-        # Done if we're on https://docs.ruby-lang.org/en/; don't do the other releases.
-        break if href == 'master'
         next if href.start_with?('#')
         path = href.sub(%r[^\./], '').sub(%r[/$], '')
         next if path.match(/^(LEGAL|NEWS|mailto)/)
@@ -181,13 +179,13 @@ EOT
         h3 = body.add_element(Element.new('h3'))
         a = Element.new('a')
         if path.empty?
-          a.text = BASE_URL + ' (Home page)'
+          a.text = "Home Page (#{BASE_URL})"
         else
           a.text = path
         end
         a.add_attribute('href', File.join(BASE_URL, path))
         h3.add_element(a)
-        onsite_links = page.links.select {|link| RubyLinkChecker.onsite?(link.stem) }
+        onsite_links = page.links.select {|link| RubyLinkChecker.onsite?(link.href) }
         offsite_links = page.links - onsite_links
         data = [
           {'Onsite Links' => :label, onsite_links.size => :good},
@@ -237,9 +235,11 @@ EOT
   # Returns whether the path is onsite.
   def self.onsite?(path)
     return true if path == ''
-    return false unless path.match(/^[a-zA-Z]/)
+    return true if path.start_with?('./')
+    return true if path.start_with?('#')
     potential_scheme = path.match(/^\w*/).to_s
-    !SchemeList.include?(potential_scheme)
+    return false if SchemeList.include?(potential_scheme)
+    path.match(/^[a-zA-Z]/) ? true : false
   end
 
   class Page
@@ -329,6 +329,7 @@ EOT
             text = doc.root.text
             link = Link.new(path, lineno, href, text)
             links.push(link)
+            # $stderr.puts "    #{RubyLinkChecker.onsite?(href)} #{href}"
           rescue REXML::ParseException => x
             message = "REXML::Document.new(anchor) failed for #{anchor}."
             exception = AnchorParseException.new(message, 'anchor', anchor, x)

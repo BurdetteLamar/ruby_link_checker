@@ -1,5 +1,6 @@
 require 'net/http'
 require 'rexml'
+require 'json'
 
 # A program to check links on pages in the official Ruby documentation
 # at https://docs.ruby-lang.org/en/master.
@@ -11,17 +12,11 @@ class RubyLinkChecker
   # URL for documentation base page.
   BASE_URL = 'https://docs.ruby-lang.org/en/master'
 
-  # Hash of Page objects by path.
-  attr_accessor :onsite_pages, :offsite_pages
+  attr_accessor :onsite_pages, :offsite_pages, :pending_pages, :counts
 
-  # Array of paths yet to be processed.
-  attr_accessor :pending_pages
-
-  attr_accessor :counts
-
-  def initialize
-    self.onsite_pages = {}
-    self.offsite_pages = {}
+  def initialize(onsite_pages = {}, offsite_pages = {})
+    self.onsite_pages = onsite_pages
+    self.offsite_pages = offsite_pages
     self.pending_pages = []
     self.counts = {
       onsite_links_found: 0,
@@ -29,6 +24,17 @@ class RubyLinkChecker
       links_checked: 0,
       links_broken: 0,
     }
+  end
+
+  def to_json(*args)
+    {
+      JSON.create_id  => self.class.name,
+      'a'             => [ onsite_pages, offsite_pages ],
+    }.to_json(*args)
+  end
+
+  def self.json_create(object)
+    new(*object['a'])
   end
 
   def check_links
@@ -42,6 +48,7 @@ class RubyLinkChecker
       next if onsite_pages[path]
       # New page.
       page = Page.new(path)
+      page.check_page
       if RubyLinkChecker.onsite?(path)
         next unless page.found
         onsite_pages[path] = page
@@ -72,8 +79,47 @@ class RubyLinkChecker
         pending_pages.push(path)
       end
     end
-    counts[:end_time] = Time.new
-    generate_report
+    # verify_links
+    # counts[:end_time] = Time.new
+    # generate_report
+  end
+
+  def verify_links
+    onsite_pages.each_pair do |path, page|
+      page.links.each do |link|
+        href = link.href
+        if onsite_pages.keys.include?(href) ||
+           offsite_pages.keys.include?(href)
+          link.status = :broken
+        else
+          link.status = :valid
+        end
+      end
+    end
+    # linking_pages = pages.select do |path, page|
+    #   !page.links.empty?
+    # end
+    # link_count = 0
+    # broken_count = 0
+    # linking_pages.each_pair do |path, page|
+    #   link_count += page.links.size
+    #   page.links.each_with_index do |link, i|
+    #     if link.valid_p.nil? # Don't disturb if already set to false.
+    #       target_page = pages[link.real_path]
+    #       if target_page
+    #         target_id = link.fragment
+    #         link.valid_p = target_id.nil? ||
+    #                        target_page.ids.include?(target_id) ||
+    #                        !target_page.content_type&.match('html')
+    #       else
+    #         link.valid_p = false
+    #       end
+    #     end
+    #     broken_count += 1 unless link.valid_p
+    #   end
+    # end
+    # @counts[:links_checked] = link_count
+    # @counts[:links_broken] = broken_count
   end
 
   def generate_report
@@ -194,6 +240,12 @@ EOT
         ]
         table2(body, data, "#{path}-summary", 'Summary')
         body.add_element(Element.new('p'))
+        page.links.each do |link|
+          div = body.add_element(Element.new('div'))
+          div.text = "#{link.status} #{link.stem} #{link.href}"
+        end
+        body.add_element(Element.new('p'))
+
       end
     end
 
@@ -246,12 +298,15 @@ EOT
 
     attr_accessor :path, :links, :ids, :exceptions, :found
 
-    def initialize(path)
+    def initialize(path, links = [], ids = [], exceptions = [], found = false)
       self.path = path
-      self.links = []
-      self.ids = []
-      self.exceptions = []
-      self.found = false
+      self.links = links
+      self.ids = ids
+      self.exceptions = exceptions
+      self.found = found
+    end
+
+    def check_page
       # Form URL.
       url = if RubyLinkChecker.onsite?(path)
               File.join(BASE_URL, path)
@@ -282,8 +337,22 @@ EOT
       # Get the HTML body.
       body = response.body
       gather_ids(body)
-      $stderr.puts "    #{ids.size} #{path}"
-      gather_links(path, body) if RubyLinkChecker.onsite?(path)
+      # $stderr.puts "    Ids: #{ids.size} #{path}"
+      return unless RubyLinkChecker.onsite?(path)
+      gather_links(path, body)
+      # $stderr.puts "    Links: #{links.size} #{path}"
+    end
+
+    def to_json(*args)
+      {
+        JSON.create_id  => self.class.name,
+        'a'             => [ path, links, ids, exceptions, found]
+      }.to_json(*args)
+    end
+
+    def self.json_create(object)
+      # p object
+      new(*object['a'])
     end
 
     # Returns whether the code is bad (zero or >= 400).
@@ -329,7 +398,7 @@ EOT
             text = doc.root.text
             link = Link.new(path, lineno, href, text)
             links.push(link)
-            # $stderr.puts "    #{RubyLinkChecker.onsite?(href)} #{href}"
+            # $stderr.puts "    Href: #{RubyLinkChecker.onsite?(href)} #{href}"
           rescue REXML::ParseException => x
             message = "REXML::Document.new(anchor) failed for #{anchor}."
             exception = AnchorParseException.new(message, 'anchor', anchor, x)
@@ -377,7 +446,7 @@ EOT
   end
 
   class Link
-    attr_accessor :stem, :lineno, :href, :text
+    attr_accessor :stem, :lineno, :href, :text, :status
     def initialize(linker, lineno, href, text)
       self.lineno = lineno
       self.text = text.nil? ? '' : text.strip
@@ -388,6 +457,19 @@ EOT
       end
       self.href = href
       self.stem = dirname
+      self.status = :unknown
+    end
+
+    def to_json(*args)
+      {
+        JSON.create_id  => self.class.name,
+        'a'             => [ stem, lineno, href, text ]
+      }.to_json(*args)
+    end
+
+    def self.json_create(object)
+      # p object
+      new(*object['a'])
     end
   end
 
@@ -422,5 +504,13 @@ EOT
 end
 
 if $0 == __FILE__
-  RubyLinkChecker.new.check_links
+  # checker = RubyLinkChecker.new
+  # checker.check_links
+  # json = JSON.generate(checker)
+  # File.write('t.json', json)
+  json = File.read('t.json')
+  checker = JSON.parse(json, create_additions: true)
+  p checker.onsite_pages.size
+  p checker.offsite_pages.size
+  p checker.onsite_pages.first[1].links.size
 end

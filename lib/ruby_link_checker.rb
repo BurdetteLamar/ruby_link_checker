@@ -65,7 +65,6 @@ class RubyLinkChecker
         href = link.href
         next if href.start_with?('#')
         path = href.sub(%r[^\./], '').sub(%r[/$], '')
-        next if path.match(/^(LEGAL|NEWS|mailto)/)
         path, _ = path.split('#')
         stem = link.stem
         if RubyLinkChecker.onsite?(path) && stem != '.'
@@ -76,56 +75,64 @@ class RubyLinkChecker
         next if offsite_pages.include?(path)
         next if pending_pages.include?(path)
         # Pend it.
+        $stderr.puts path
         pending_pages.push(path)
       end
     end
-    # verify_links
-    # counts[:end_time] = Time.new
-    # generate_report
+    counts[:end_time] = Time.new
   end
 
   def verify_links
     onsite_pages.each_pair do |path, page|
       page.links.each do |link|
-        href = link.href
-        if onsite_pages.keys.include?(href) ||
-           offsite_pages.keys.include?(href)
-          link.status = :broken
+        path, fragment = link.href.split('#')
+        if path.nil? || path.empty?
+          # Fragment only.
+          if page.ids.include?(fragment)
+            link.status = :valid
+          else
+            link.status = :broken
+          end
+        elsif fragment.nil?
+          # Path only.
+          href = link.href.sub(%r[^\./], '').sub(%r[/$], '')
+          if onsite_pages.keys.include?(href) ||
+             offsite_pages.keys.include?(href)
+            link.status = :valid
+          else
+            link.status = :broken
+          end
         else
-          link.status = :valid
+          # Both path and fragment.
+          if path == page.path
+            if page.ids.include?(fragment)
+              link.status = :valid
+            else
+              link.status = :broken
+            end
+          else
+            target_page = target_page(path)
+            if target_page.nil?
+              link.status = :broken
+            elsif target_page.ids.include?(fragment)
+              link.status = :valid
+            else
+              link.status = :broken
+            end
+          end
         end
       end
     end
-    # linking_pages = pages.select do |path, page|
-    #   !page.links.empty?
-    # end
-    # link_count = 0
-    # broken_count = 0
-    # linking_pages.each_pair do |path, page|
-    #   link_count += page.links.size
-    #   page.links.each_with_index do |link, i|
-    #     if link.valid_p.nil? # Don't disturb if already set to false.
-    #       target_page = pages[link.real_path]
-    #       if target_page
-    #         target_id = link.fragment
-    #         link.valid_p = target_id.nil? ||
-    #                        target_page.ids.include?(target_id) ||
-    #                        !target_page.content_type&.match('html')
-    #       else
-    #         link.valid_p = false
-    #       end
-    #     end
-    #     broken_count += 1 unless link.valid_p
-    #   end
-    # end
-    # @counts[:links_checked] = link_count
-    # @counts[:links_broken] = broken_count
+  end
+
+  def target_page(path)
+    onsite_pages[path] || offsite_pages[path]
   end
 
   def generate_report
     doc = REXML::Document.new('')
-    root = doc.add_element(Element.new('root'))
-    head = root.add_element(Element.new('head'))
+    html = doc.add_element(Element.new('html'))
+    head = html.add_element(Element.new('head'))
     title = head.add_element(Element.new('title'))
     title.text = 'RubyLinkChecker Report'
     style = head.add_element(Element.new('style'))
@@ -138,10 +145,9 @@ class RubyLinkChecker
 .bad     { color: rgb(156,   0,   6); background-color: rgb(255, 199, 206) } /* Reddish */
 .neutral { color: rgb(  0,   0,   0); background-color: rgb(217, 217, 214) } /* Grayish */
 EOT
-    body = root.add_element(Element.new('body'))
+    body = html.add_element(Element.new('body'))
     h1 = body.add_element(Element.new('h1'))
-    h1.text = 'RDocLinkChecker Report'
-    add_summary(body)
+    h1.text = "RDocLinkChecker Report (#{Time.now})"
     add_onsite_pages(body)
     add_offsite_pages(body)
     doc.write($stdout, 2)
@@ -152,6 +158,7 @@ EOT
     good: 'data center good',
     iffy: 'data center iffy',
     bad: 'data center bad',
+    info: 'data center neutral',
   }
 
   def table2(parent, data, id = nil, title = nil)
@@ -184,74 +191,56 @@ EOT
     end
   end
 
-  def add_summary(body)
+  def add_onsite_pages(body)
     h2 = body.add_element(Element.new('h2'))
-    h2.text = 'Summary'
+    h2.text = "Onsite Pages (#{onsite_pages.size})"
 
-    # Times table.
-    elapsed_time = counts[:end_time] - counts[:start_time]
-    seconds = elapsed_time % 60
-    minutes = (elapsed_time / 60) % 60
-    hours = (elapsed_time/3600)
-    elapsed_time_s = "%2.2d:%2.2d:%2.2d" % [hours, minutes, seconds]
-    format = "%Y-%m-%d-%a-%H:%M:%SZ"
-    start_time_s = counts[:start_time].strftime(format)
-    end_time_s = counts[:end_time].strftime(format)
-    data = [
-      {'Start Time' => :label, start_time_s => :good},
-      {'End Time' => :label, end_time_s => :good},
-      {'Elapsed Time' => :label, elapsed_time_s => :good},
-    ]
-    table2(body, data, 'times', 'Times')
-    body.add_element(Element.new('p'))
-
-    # Counts.
-    data = [
-      {'Onsite Pages' => :label, onsite_pages.size => :good},
-      {'Offsite Pages' => :label, offsite_pages.size => :good},
-      {'Onsite Links Found' => :label, counts[:onsite_links_found] => :good},
-      {'Offsite Links Found' => :label, counts[:offsite_links_found] => :good},
-      {'Links Checked' => :label, counts[:links_checked] => :good},
-      {'Links Broken' => :label, counts[:links_broken] => :bad},
-    ]
-    table2(body, data, 'counts', 'Counts')
-    body.add_element(Element.new('p'))
-
-    def add_onsite_pages(body)
-      h2 = body.add_element(Element.new('h2'))
-      h2.text = 'Onsite Pages'
-      onsite_pages.keys.sort.each do |path|
-        page = onsite_pages[path]
-        h3 = body.add_element(Element.new('h3'))
-        a = Element.new('a')
-        if path.empty?
-          a.text = "Home Page (#{BASE_URL})"
-        else
-          a.text = path
-        end
-        a.add_attribute('href', File.join(BASE_URL, path))
-        h3.add_element(a)
-        onsite_links = page.links.select {|link| RubyLinkChecker.onsite?(link.href) }
-        offsite_links = page.links - onsite_links
-        data = [
-          {'Onsite Links' => :label, onsite_links.size => :good},
-          {'Offsite Links' => :label, offsite_links.size => :good},
-          {'Exceptions' => :label, page.exceptions.size => :good},
-        ]
-        table2(body, data, "#{path}-summary", 'Summary')
-        body.add_element(Element.new('p'))
-        page.links.each do |link|
-          div = body.add_element(Element.new('div'))
-          div.text = "#{link.status} #{link.stem} #{link.href}"
-        end
-        body.add_element(Element.new('p'))
-
+    i = 0
+    onsite_pages.keys.sort.each do |path|
+      i += 1
+      page = onsite_pages[path]
+      h3 = body.add_element(Element.new('h3'))
+      a = Element.new('a')
+      if path.empty?
+        a.text = "Home Page (#{BASE_URL})"
+      else
+        a.text = path
       end
+      a.add_attribute('href', File.join(BASE_URL, path))
+      h3.add_element(a)
+      onsite_links = page.links.select {|link| RubyLinkChecker.onsite?(link.href) }
+      offsite_links = page.links - onsite_links
+      broken_links = onsite_links.select {|link| link.status == :broken }
+      broken_links += offsite_links.select {|link| link.status == :broken }
+      broken_links_status = broken_links.size == 0 ? :good : :bad
+      exceptions_status = page.exceptions.size == 0 ? :good : :bad
+        data = [
+        {'Onsite Links' => :label, onsite_links.size => :good},
+        {'Offsite Links' => :label, offsite_links.size => :good},
+        {'Broken Links' => :label, broken_links.size => broken_links_status},
+        {'Exceptions' => :label, page.exceptions.size => exceptions_status},
+      ]
+      table2(body, data, "#{path}-summary")
+      body.add_element(Element.new('p'))
+      page.links.each do |link|
+        next unless link.status == :broken
+        path, fragment = link.href.split('#')
+        data = [
+          {'Path' => :label, "'#{path}'" => :bad},
+          {'Fragment' => :label, "'#{fragment}'" => :bad},
+          {'Text' => :label, "'#{link.text}'" => :info},
+          {'Line Number' => :label, link.lineno => :info},
+        ]
+        table2(body, data, "#{path}-summary")
+      end
+      body.add_element(Element.new('p'))
+      # break if i == 2
     end
 
     def add_offsite_pages(body)
       h2 = body.add_element(Element.new('h2'))
-      h2.text = 'Offsite Pages'
+      h2.text = "Offsite Pages (#{offsite_pages.size})"
+
       paths_by_url = {}
       offsite_pages.each_pair do |path, page|
         next unless page.found
@@ -313,7 +302,7 @@ EOT
             else
               path
             end
-      $stderr.puts(url)
+      # $stderr.puts(url)
       # Parse the url.
       begin
         uri = URI(url)
@@ -510,7 +499,6 @@ if $0 == __FILE__
   # File.write('t.json', json)
   json = File.read('t.json')
   checker = JSON.parse(json, create_additions: true)
-  p checker.onsite_pages.size
-  p checker.offsite_pages.size
-  p checker.onsite_pages.first[1].links.size
+  checker.verify_links
+  checker.generate_report
 end

@@ -195,11 +195,13 @@ EOT
     h2 = body.add_element(Element.new('h2'))
     h2.text = "Onsite Pages (#{onsite_pages.size})"
 
-    i = 0
     onsite_pages.keys.sort.each do |path|
-      i += 1
       page = onsite_pages[path]
-      h3 = body.add_element(Element.new('h3'))
+      onsite_links = page.links.select {|link| RubyLinkChecker.onsite?(link.href) }
+      offsite_links = page.links - onsite_links
+      broken_links = onsite_links.select {|link| link.status == :broken }
+      broken_links += offsite_links.select {|link| link.status == :broken }
+      next if broken_links.empty?
       a = Element.new('a')
       if path.empty?
         a.text = "Home Page (#{BASE_URL})"
@@ -207,13 +209,6 @@ EOT
         a.text = path
       end
       a.add_attribute('href', File.join(BASE_URL, path))
-      h3.add_element(a)
-      onsite_links = page.links.select {|link| RubyLinkChecker.onsite?(link.href) }
-      offsite_links = page.links - onsite_links
-      broken_links = onsite_links.select {|link| link.status == :broken }
-      broken_links += offsite_links.select {|link| link.status == :broken }
-      broken_links_status = broken_links.size == 0 ? :good : :bad
-      exceptions_status = page.exceptions.size == 0 ? :good : :bad
         data = [
         {'Onsite Links' => :label, onsite_links.size => :good},
         {'Offsite Links' => :label, offsite_links.size => :good},
@@ -225,16 +220,26 @@ EOT
       page.links.each do |link|
         next unless link.status == :broken
         path, fragment = link.href.split('#')
+        if onsite_pages[path]
+          error = 'Bad Fragment'
+          path_status = :good
+          fragment_status = :bad
+        else
+          error = 'Bad Page'
+          path_status = :bad
+          fragment_status = :info
+        end
+        h3 = body.add_element('h3')
+        h3.text = error
         data = [
-          {'Path' => :label, "'#{path}'" => :bad},
-          {'Fragment' => :label, "'#{fragment}'" => :bad},
-          {'Text' => :label, "'#{link.text}'" => :info},
+          {'Path' => :label, path => path_status},
+          {'Fragment' => :label, fragment => fragment_status},
+          {'Text' => :label, link.text => :info},
           {'Line Number' => :label, link.lineno => :info},
         ]
         table2(body, data, "#{path}-summary")
       end
       body.add_element(Element.new('p'))
-      # break if i == 2
     end
 
     def add_offsite_pages(body)

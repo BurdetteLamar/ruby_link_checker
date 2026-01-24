@@ -201,7 +201,7 @@ EOT
       offsite_links = page.links - onsite_links
       broken_links = onsite_links.select {|link| link.status == :broken }
       broken_links += offsite_links.select {|link| link.status == :broken }
-      next if broken_links.empty?
+      h3 = body.add_element('h3')
       a = Element.new('a')
       if path.empty?
         a.text = "Home Page (#{BASE_URL})"
@@ -209,28 +209,22 @@ EOT
         a.text = path
       end
       a.add_attribute('href', File.join(BASE_URL, path))
-        data = [
-        {'Onsite Links' => :label, onsite_links.size => :good},
-        {'Offsite Links' => :label, offsite_links.size => :good},
-        {'Broken Links' => :label, broken_links.size => broken_links_status},
-        {'Exceptions' => :label, page.exceptions.size => exceptions_status},
-      ]
-      table2(body, data, "#{path}-summary")
-      body.add_element(Element.new('p'))
+      h3.add_element(a)
+      next if broken_links.empty?
       page.links.each do |link|
         next unless link.status == :broken
         path, fragment = link.href.split('#')
         if onsite_pages[path]
-          error = 'Bad Fragment'
+          error = 'Fragment not found'
           path_status = :good
           fragment_status = :bad
         else
-          error = 'Bad Page'
+          error = 'Page Not Found'
           path_status = :bad
           fragment_status = :info
         end
-        h3 = body.add_element('h3')
-        h3.text = error
+        h4 = body.add_element('h4')
+        h4.text = error
         data = [
           {'Path' => :label, path => path_status},
           {'Fragment' => :label, fragment => fragment_status},

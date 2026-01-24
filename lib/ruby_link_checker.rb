@@ -104,7 +104,7 @@ class RubyLinkChecker
           end
         else
           # Both path and fragment.
-          if path == page.path
+          if path == File.basename(page.path)
             if page.ids.include?(fragment)
               link.status = :valid
             else

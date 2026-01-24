@@ -208,13 +208,14 @@ EOT
       else
         a.text = path
       end
+      a.text += " (#{page.links.size} links, #{page.ids.size} ids)"
       a.add_attribute('href', File.join(BASE_URL, path))
       h3.add_element(a)
       next if broken_links.empty?
       page.links.each do |link|
         next unless link.status == :broken
         path, fragment = link.href.split('#')
-        if onsite_pages[path]
+        if onsite_pages[path] || offsite_pages[path]
           error = 'Fragment not found'
           path_status = :good
           fragment_status = :bad
@@ -248,7 +249,7 @@ EOT
         paths_by_url[url] = [] unless paths_by_url[url]
         _path = uri.path
         _path = "#{_path}?#{uri.query}" unless uri.query.nil?
-        paths_by_url[url].push(_path)
+        paths_by_url[url].push([_path, page.ids.size])
       end
       paths_by_url.keys.sort.each do |url|
         h3 = body.add_element(Element.new('h3'))
@@ -258,10 +259,12 @@ EOT
         paths = paths_by_url[url]
         next if paths.empty?
         ul = body.add_element(Element.new('ul'))
-        paths.sort.each do |path|
+        paths.sort.each do |pair|
+          path, id_count = *pair
           li = ul.add_element(Element.new('li'))
           a = li.add_element(Element.new('a'))
           a.text = path.empty? ? url : path
+          a.text += " (#{id_count} ids)"
           a.add_attribute('href', File.join(url, path))
         end
       end

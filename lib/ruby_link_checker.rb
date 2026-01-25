@@ -75,7 +75,7 @@ class RubyLinkChecker
         next if offsite_pages.include?(path)
         next if pending_pages.include?(path)
         # Pend it.
-        $stderr.puts path
+        # $stderr.puts path
         pending_pages.push(path)
       end
     end
@@ -211,29 +211,41 @@ EOT
       a.text += " (#{page.links.size} links, #{page.ids.size} ids)"
       a.add_attribute('href', File.join(BASE_URL, path))
       h3.add_element(a)
-      next if broken_links.empty?
-      page.links.each do |link|
-        next unless link.status == :broken
-        path, fragment = link.href.split('#')
-        if onsite_pages[path] || offsite_pages[path]
-          error = 'Fragment not found'
-          path_status = :good
-          fragment_status = :bad
-        else
-          error = 'Page Not Found'
-          path_status = :bad
-          fragment_status = :info
+      unless broken_links.empty?
+        page.links.each do |link|
+          next unless link.status == :broken
+          path, fragment = link.href.split('#')
+          if onsite_pages[path] || offsite_pages[path]
+            error = 'Fragment not found'
+            path_status = :good
+            fragment_status = :bad
+          else
+            error = 'Page Not Found'
+            path_status = :bad
+            fragment_status = :info
+          end
+          h4 = body.add_element('h4')
+          h4.text = error
+          data = [
+            {'Path' => :label, path => path_status},
+            {'Fragment' => :label, fragment => fragment_status},
+            {'Text' => :label, link.text => :info},
+            {'Line Number' => :label, link.lineno => :info},
+          ]
+          table2(body, data, "#{path}-summary")
         end
-        h4 = body.add_element('h4')
-        h4.text = error
-        data = [
-          {'Path' => :label, path => path_status},
-          {'Fragment' => :label, fragment => fragment_status},
-          {'Text' => :label, link.text => :info},
-          {'Line Number' => :label, link.lineno => :info},
-        ]
-        table2(body, data, "#{path}-summary")
       end
+      # unless page.exceptions.empty?
+      #   page.exceptions.each do |exception|
+      #     ul = body.add_element('ul')
+      #     %i[message argname argvalue exception_class exception_message].each do |method|
+      #       value = exception.send(method)
+      #       li = ul.add_element('li')
+      #       li.text = "#{method}: #{value}"
+      #     end
+      #   end
+      # end
+
       body.add_element(Element.new('p'))
     end
 
@@ -304,7 +316,7 @@ EOT
             else
               path
             end
-      # $stderr.puts(url)
+      $stderr.puts(url)
       # Parse the url.
       begin
         uri = URI(url)
@@ -415,17 +427,24 @@ EOT
     def gather_ids(body)
       body.lines.each do |line|
         line.chomp!
+        # $stderr.puts line if line.match('anchor')
         next if line.match('footmark')
         next if line.match('foottext')
-        next unless line.match(%r:<(\w+) id=:)
+        next unless line.match(%r[id=])
+        next unless line.match(%r[<(\w+)])
         end_tag = "</#{$1}>"
         line += '>' unless line.end_with?('>')
         line += end_tag unless line.end_with?(end_tag)
         line.sub!(' hidden', ' hidden="true"')
         begin
           doc = REXML::Document.new(line)
-          id = doc.root.attributes['id']
-          ids.push(id)
+          eles = REXML::XPath.match(doc, '//*')
+          names = eles.map{|element| element.name }
+          # $stderr.puts names.to_s if names.include?('dt')
+          eles.each do |element|
+            id = element.attributes['id']
+            ids.push(id) if id
+          end
         rescue REXML::ParseException => x
           message = "REXML::Document.new(line) failed for #{line}."
           exception = IdParseException.new(message, 'line', line, x)
@@ -495,10 +514,10 @@ EOT
 end
 
 if $0 == __FILE__
-  # checker = RubyLinkChecker.new
-  # checker.check_links
-  # json = JSON.generate(checker)
-  # File.write('t.json', json)
+  checker = RubyLinkChecker.new
+  checker.check_links
+  json = JSON.generate(checker)
+  File.write('t.json', json)
   json = File.read('t.json')
   checker = JSON.parse(json, create_additions: true)
   checker.verify_links

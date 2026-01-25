@@ -95,34 +95,22 @@ class RubyLinkChecker
           end
         elsif fragment.nil?
           # Path only.
-          if path == File.basename(page.path)
+          href = link.href.sub(%r[^\./], '').sub(%r[/$], '')
+          if onsite_pages.keys.include?(href) ||
+             offsite_pages.keys.include?(href)
             link.status = :valid
           else
-            href = link.href.sub(%r[^\./], '').sub(%r[/$], '')
-            if onsite_pages.keys.include?(href) ||
-               offsite_pages.keys.include?(href)
-              link.status = :valid
-            else
-              link.status = :broken
-            end
+            link.status = :broken
           end
         else
           # Both path and fragment.
-          if path == File.basename(page.path)
-            if page.ids.include?(fragment)
-              link.status = :valid
-            else
-              link.status = :broken
-            end
+          target_page = target_page(path)
+          if target_page.nil?
+            link.status = :broken
+          elsif target_page.ids.include?(fragment)
+            link.status = :valid
           else
-            target_page = target_page(path)
-            if target_page.nil?
-              link.status = :broken
-            elsif target_page.ids.include?(fragment)
-              link.status = :valid
-            else
-              link.status = :broken
-            end
+            link.status = :broken
           end
         end
       end

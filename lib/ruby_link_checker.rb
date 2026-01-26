@@ -140,9 +140,9 @@ EOT
     body = html.add_element(Element.new('body'))
     h1 = body.add_element(Element.new('h1'))
     h1.text = "RDocLinkChecker Report (#{Time.now})"
+    add_summary(body)
     add_onsite_pages(body)
     add_offsite_pages(body)
-    add_summary(body)
     doc.write($stdout, 2)
   end
 
@@ -205,12 +205,9 @@ EOT
       {'Offsite Links' => :label, offsite_links => :info},
       {'Broken Links' => :label, broken_links => :bad},
     ]
-    div = Element.new('div')
-    first_ele = body.children[0]
-    first_ele.next_sibling = div
-    h2 = div.add_element(Element.new('h2'))
+    h2 = body.add_element(Element.new('h2'))
     h2.text = 'Summary'
-    table2(div, data, 'summary')
+    table2(body, data, 'summary')
   end
 
   def add_onsite_pages(body)
@@ -536,10 +533,10 @@ EOT
 end
 
 if $0 == __FILE__
-  # checker = RubyLinkChecker.new
-  # checker.check_links
-  # json = JSON.generate(checker)
-  # File.write('t.json', json)
+  checker = RubyLinkChecker.new
+  checker.check_links
+  json = JSON.generate(checker)
+  File.write('t.json', json)
   json = File.read('t.json')
   checker = JSON.parse(json, create_additions: true)
   checker.verify_links

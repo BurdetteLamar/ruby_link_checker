@@ -142,6 +142,7 @@ EOT
     h1.text = "RDocLinkChecker Report (#{Time.now})"
     add_onsite_pages(body)
     add_offsite_pages(body)
+    add_summary(body)
     doc.write($stdout, 2)
   end
 
@@ -181,6 +182,35 @@ EOT
       end
       td.add_attribute('class', Classes[value_class])
     end
+  end
+
+  def add_summary(body)
+    onsite_links = 0
+    offsite_links = 0
+    broken_links = 0
+    onsite_pages.each_pair do |path, page|
+      page.links.each do |link|
+        if RubyLinkChecker.onsite?(link.href)
+          onsite_links += 1
+        else
+          offsite_links += 1
+        end
+        broken_links += 1 if link.status == :broken
+      end
+    end
+    data = [
+      {'Onsite Pages' => :label, onsite_pages.size => :info},
+      {'Offsite Pages' => :label, offsite_pages.size => :info},
+      {'Onsite Links' => :label, onsite_links => :info},
+      {'Offsite Links' => :label, offsite_links => :info},
+      {'Broken Links' => :label, broken_links => :bad},
+    ]
+    div = Element.new('div')
+    first_ele = body.children[0]
+    first_ele.next_sibling = div
+    h2 = div.add_element(Element.new('h2'))
+    h2.text = 'Summary'
+    table2(div, data, 'summary')
   end
 
   def add_onsite_pages(body)
@@ -506,10 +536,10 @@ EOT
 end
 
 if $0 == __FILE__
-  checker = RubyLinkChecker.new
-  checker.check_links
-  json = JSON.generate(checker)
-  File.write('t.json', json)
+  # checker = RubyLinkChecker.new
+  # checker.check_links
+  # json = JSON.generate(checker)
+  # File.write('t.json', json)
   json = File.read('t.json')
   checker = JSON.parse(json, create_additions: true)
   checker.verify_links

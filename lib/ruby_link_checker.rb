@@ -328,13 +328,13 @@ EOT
       self.ids = ids
       self.exceptions = exceptions
       self.found = found
-      self.type = type
+      self.type = type == :unknown ? Page.get_type(path) : type
     end
 
-    def type
+    def self.get_type(path)
       case
       when path.match(SchemeRegexp)
-        :url
+        :offsite
       when path == ''
         :page
       when path.match(/^fatal/)

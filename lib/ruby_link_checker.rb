@@ -50,7 +50,7 @@ class RubyLinkChecker
       page = Page.new(path)
       $stderr.puts "#{page.type} #{path}"
       page.check_page
-      if RubyLinkChecker.onsite?(path)
+      if page.onsite?
         next unless page.found
         onsite_pages[path] = page
       else
@@ -277,7 +277,12 @@ EOT
       offsite_pages.each_pair do |path, page|
         next unless page.found
         uri = URI(path)
-        url = File.join(uri.scheme + '://', uri.hostname)
+        if uri.scheme.nil?
+          url = uri.hostname
+        else
+          url = File.join(uri.scheme + '://', uri.hostname)
+        end
+        next if url.nil?
         paths_by_url[url] = [] unless paths_by_url[url]
         _path = uri.path
         _path = "#{_path}?#{uri.query}" unless uri.query.nil?
@@ -334,7 +339,7 @@ EOT
     def self.get_type(path)
       case
       when path.match(SchemeRegexp)
-        :offsite
+        :url
       when path == ''
         :page
       when path.match(/^fatal/)
@@ -346,6 +351,14 @@ EOT
       else
         :unknown
       end
+    end
+
+    def onsite?
+      [:class, :page].include?(type)
+    end
+
+    def offsite?
+      [:url, :unknown].include?(type)
     end
 
     def check_page

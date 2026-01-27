@@ -48,6 +48,7 @@ class RubyLinkChecker
       next if onsite_pages[path]
       # New page.
       page = Page.new(path)
+      $stderr.puts "#{page.type} #{path}"
       page.check_page
       if RubyLinkChecker.onsite?(path)
         next unless page.found
@@ -305,6 +306,7 @@ EOT
 
 
   SchemeList = URI.scheme_list.keys.map {|scheme| scheme.downcase}
+  SchemeRegexp = Regexp.new('^(' + SchemeList.join('|') + ')')
 
   # Returns whether the path is onsite.
   def self.onsite?(path)
@@ -318,14 +320,32 @@ EOT
 
   class Page
 
-    attr_accessor :path, :links, :ids, :exceptions, :found
+    attr_accessor :path, :links, :ids, :exceptions, :found, :type
 
-    def initialize(path, links = [], ids = [], exceptions = [], found = false)
+    def initialize(path, links = [], ids = [], exceptions = [], found = false, type = :unknown)
       self.path = path
       self.links = links
       self.ids = ids
       self.exceptions = exceptions
       self.found = found
+      self.type = type
+    end
+
+    def type
+      case
+      when path.match(SchemeRegexp)
+        :url
+      when path == ''
+        :page
+      when path.match(/^fatal/)
+        :class
+      when path.match(/^([a-z]|NEWS|README|COPYING|LEGAL)/)
+        :page
+      when path.match(/^[A-Z]/)
+        :class
+      else
+        :unknown
+      end
     end
 
     def check_page
@@ -335,7 +355,7 @@ EOT
             else
               path
             end
-      $stderr.puts(url)
+      # $stderr.puts(url)
       # Parse the url.
       begin
         uri = URI(url)
@@ -368,7 +388,7 @@ EOT
     def to_json(*args)
       {
         JSON.create_id  => self.class.name,
-        'a'             => [ path, links, ids, exceptions, found]
+        'a'             => [ path, links, ids, exceptions, found, type]
       }.to_json(*args)
     end
 

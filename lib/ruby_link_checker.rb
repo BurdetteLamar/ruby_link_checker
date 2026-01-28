@@ -215,20 +215,46 @@ EOT
     h2 = body.add_element(Element.new('h2'))
     h2.text = "Onsite Pages (#{onsite_pages.size})"
 
-    onsite_pages.keys.sort.each do |path|
+    table = body.add_element('table')
+    headers = ['Path', 'Ids', 'Onsite Links', 'Offsite Links', 'Broken Links']
+    tr = table.add_element('tr')
+    headers.each do |header|
+      th = tr.add_element('th')
+      th.text = header
+      th.add_attribute('class', Classes[:info])
+    end
+    onsite_pages.keys.sort.each_with_index do |path, page_id|
       page = onsite_pages[path]
+      if path.empty?
+        path = BASE_URL
+      end
       onsite_links = page.links.select {|link| RubyLinkChecker.onsite?(link.href) }
       offsite_links = page.links - onsite_links
       broken_links = onsite_links.select {|link| link.status == :broken }
       broken_links += offsite_links.select {|link| link.status == :broken }
-      h3 = body.add_element('h3')
-      a = Element.new('a')
-      if path.empty?
-        a.text = "Home Page (#{BASE_URL})"
-      else
-        a.text = path
+      tr = table.add_element('tr')
+      status = broken_links.empty? ? 'good' : 'bad'
+      tr.add_attribute('class', status)
+      [path, page.ids.size, onsite_links.size, offsite_links.size, broken_links.size].each_with_index do |value, i|
+        td = tr.add_element('td')
+        if i == 0
+          if broken_links.empty?
+            td.text = value
+          else
+            a = td.add_element('a')
+            a.add_attribute('href', "##{page_id}")
+            a.text = value
+          end
+        else
+          td.text = value
+          td.add_attribute('align', 'right')
+        end
       end
-      a.text += " (#{page.links.size} links, #{page.ids.size} ids)"
+      next if broken_links.empty?
+      h3 = body.add_element('h3')
+      h3.add_attribute('id', page_id)
+      a = Element.new('a')
+      a.text = path
       a.add_attribute('href', File.join(BASE_URL, path))
       h3.add_element(a)
       unless broken_links.empty?
@@ -268,47 +294,46 @@ EOT
 
       body.add_element(Element.new('p'))
     end
-
-    def add_offsite_pages(body)
-      h2 = body.add_element(Element.new('h2'))
-      h2.text = "Offsite Pages (#{offsite_pages.size})"
-
-      paths_by_url = {}
-      offsite_pages.each_pair do |path, page|
-        next unless page.found
-        uri = URI(path)
-        if uri.scheme.nil?
-          url = uri.hostname
-        else
-          url = File.join(uri.scheme + '://', uri.hostname)
-        end
-        next if url.nil?
-        paths_by_url[url] = [] unless paths_by_url[url]
-        _path = uri.path
-        _path = "#{_path}?#{uri.query}" unless uri.query.nil?
-        paths_by_url[url].push([_path, page.ids.size])
-      end
-      paths_by_url.keys.sort.each do |url|
-        h3 = body.add_element(Element.new('h3'))
-        a = h3.add_element(Element.new('a'))
-        a.text = url
-        a.add_attribute('href', url)
-        paths = paths_by_url[url]
-        next if paths.empty?
-        ul = body.add_element(Element.new('ul'))
-        paths.sort.each do |pair|
-          path, id_count = *pair
-          li = ul.add_element(Element.new('li'))
-          a = li.add_element(Element.new('a'))
-          a.text = path.empty? ? url : path
-          a.text += " (#{id_count} ids)"
-          a.add_attribute('href', File.join(url, path))
-        end
-      end
-    end
-
   end
 
+
+  def add_offsite_pages(body)
+    h2 = body.add_element(Element.new('h2'))
+    h2.text = "Offsite Pages (#{offsite_pages.size})"
+
+    paths_by_url = {}
+    offsite_pages.each_pair do |path, page|
+      next unless page.found
+      uri = URI(path)
+      if uri.scheme.nil?
+        url = uri.hostname
+      else
+        url = File.join(uri.scheme + '://', uri.hostname)
+      end
+      next if url.nil?
+      paths_by_url[url] = [] unless paths_by_url[url]
+      _path = uri.path
+      _path = "#{_path}?#{uri.query}" unless uri.query.nil?
+      paths_by_url[url].push([_path, page.ids.size])
+    end
+    paths_by_url.keys.sort.each do |url|
+      h3 = body.add_element(Element.new('h3'))
+      a = h3.add_element(Element.new('a'))
+      a.text = url
+      a.add_attribute('href', url)
+      paths = paths_by_url[url]
+      next if paths.empty?
+      ul = body.add_element(Element.new('ul'))
+      paths.sort.each do |pair|
+        path, id_count = *pair
+        li = ul.add_element(Element.new('li'))
+        a = li.add_element(Element.new('a'))
+        a.text = path.empty? ? url : path
+        a.text += " (#{id_count} ids)"
+        a.add_attribute('href', File.join(url, path))
+      end
+    end
+  end
 
   SchemeList = URI.scheme_list.keys.map {|scheme| scheme.downcase}
   SchemeRegexp = Regexp.new('^(' + SchemeList.join('|') + ')')
@@ -570,10 +595,10 @@ EOT
 end
 
 if $0 == __FILE__
-  checker = RubyLinkChecker.new
-  checker.check_links
-  json = JSON.generate(checker)
-  File.write('t.json', json)
+  # checker = RubyLinkChecker.new
+  # checker.check_links
+  # json = JSON.generate(checker)
+  # File.write('t.json', json)
   json = File.read('t.json')
   checker = JSON.parse(json, create_additions: true)
   checker.verify_links

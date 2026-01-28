@@ -340,6 +340,10 @@ EOT
       case
       when path.match(SchemeRegexp)
         :url
+      when path.start_with?('./')
+        :class
+      when path.start_with?('#')
+        :class
       when path == ''
         :page
       when path.match(/^fatal/)

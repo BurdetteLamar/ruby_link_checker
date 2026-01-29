@@ -2,7 +2,7 @@ require 'net/http'
 require 'rexml'
 require 'json'
 
-# A program to check links on pages in the official Ruby documentation
+# A class to check links on pages in the official Ruby documentation
 # at https://docs.ruby-lang.org/en/master.
 #
 class RubyLinkChecker
@@ -14,6 +14,7 @@ class RubyLinkChecker
 
   attr_accessor :onsite_pages, :offsite_pages, :pending_pages, :counts
 
+  # Return a new RubyLinkChecker object.
   def initialize(onsite_pages = {}, offsite_pages = {})
     self.onsite_pages = onsite_pages
     self.offsite_pages = offsite_pages
@@ -67,9 +68,9 @@ class RubyLinkChecker
         next if href.start_with?('#')
         path = href.sub(%r[^\./], '').sub(%r[/$], '')
         path, _ = path.split('#')
-        stem = link.stem
-        if RubyLinkChecker.onsite?(path) && stem != '.'
-          path = File.join(stem, path)
+        dirname = link.dirname
+        if RubyLinkChecker.onsite?(path) && dirname != '.'
+          path = File.join(dirname, path)
         end
         # Skip if done or pending.
         next if onsite_pages.include?(path)
@@ -455,7 +456,7 @@ EOT
     end
 
     # Gathers links from the page body.
-    def gather_links(path, body)
+    def gather_links(page_path, body)
       lines = body.lines
       # Some links are multi-line; i.e., '<a ... >' and '</a>' are not on the same line.
       # Therefore we capture a possibly multi-line snippet containing both.
@@ -480,7 +481,7 @@ EOT
             doc = REXML::Document.new(anchor)
             href = doc.root.attributes['href']
             text = doc.root.text
-            link = Link.new(path, lineno, href, text)
+            link = Link.new(page_path, lineno, href, text)
             links.push(link)
             # $stderr.puts "    Href: #{RubyLinkChecker.onsite?(href)} #{href}"
           rescue REXML::ParseException => x
@@ -537,24 +538,26 @@ EOT
   end
 
   class Link
-    attr_accessor :stem, :lineno, :href, :text, :status
-    def initialize(linker, lineno, href, text)
+
+    attr_accessor :dirname, :lineno, :href, :text, :status
+
+    def initialize(page_path, lineno, href, text)
       self.lineno = lineno
       self.text = text.nil? ? '' : text.strip
-      dirname = File.dirname(linker)
+      dirname = File.dirname(page_path)
       while href.start_with?('../') do
         href.sub!('../', '')
         dirname = File.dirname(dirname)
       end
       self.href = href
-      self.stem = dirname
+      self.dirname = dirname
       self.status = :unknown
     end
 
     def to_json(*args)
       {
         JSON.create_id  => self.class.name,
-        'a'             => [ stem, lineno, href, text ]
+        'a'             => [ dirname, lineno, href, text ]
       }.to_json(*args)
     end
 
@@ -595,10 +598,10 @@ EOT
 end
 
 if $0 == __FILE__
-  # checker = RubyLinkChecker.new
-  # checker.check_links
-  # json = JSON.generate(checker)
-  # File.write('t.json', json)
+  checker = RubyLinkChecker.new
+  checker.check_links
+  json = JSON.generate(checker)
+  File.write('t.json', json)
   json = File.read('t.json')
   checker = JSON.parse(json, create_additions: true)
   checker.verify_links

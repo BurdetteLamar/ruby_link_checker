@@ -141,7 +141,7 @@ class RubyLinkChecker
 EOT
     body = html.add_element(Element.new('body'))
     h1 = body.add_element(Element.new('h1'))
-    h1.text = "RDocLinkChecker Report (#{Time.now})"
+    h1.text = "RDocLinkChecker Report"
     add_summary(body)
     add_onsite_paths(body)
     add_offsite_paths(body)
@@ -187,6 +187,7 @@ EOT
   end
 
   def add_summary(body)
+    time = Time.now.strftime('%Y-%m-%e-%a-%k:%M:%SZ')
     onsite_links = 0
     offsite_links = 0
     broken_links = 0
@@ -201,6 +202,7 @@ EOT
       end
     end
     data = [
+      {'Time' => :label, time => :info},
       {'Onsite Pages' => :label, onsite_paths.size => :info},
       {'Offsite Pages' => :label, offsite_paths.size => :info},
       {'Onsite Links' => :label, onsite_links => :info},
@@ -598,10 +600,10 @@ EOT
 end
 
 if $0 == __FILE__
-  checker = RubyLinkChecker.new
-  checker.check_links
-  json = JSON.generate(checker)
-  File.write('t.json', json)
+  # checker = RubyLinkChecker.new
+  # checker.check_links
+  # json = JSON.generate(checker)
+  # File.write('t.json', json)
   json = File.read('t.json')
   checker = JSON.parse(json, create_additions: true)
   checker.verify_links

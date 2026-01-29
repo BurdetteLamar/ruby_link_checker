@@ -12,13 +12,13 @@ class RubyLinkChecker
   # URL for documentation base page.
   BASE_URL = 'https://docs.ruby-lang.org/en/master'
 
-  attr_accessor :onsite_pages, :offsite_pages, :pending_pages, :counts
+  attr_accessor :onsite_paths, :offsite_paths, :pending_paths, :counts
 
   # Return a new RubyLinkChecker object.
-  def initialize(onsite_pages = {}, offsite_pages = {})
-    self.onsite_pages = onsite_pages
-    self.offsite_pages = offsite_pages
-    self.pending_pages = []
+  def initialize(onsite_paths = {}, offsite_paths = {})
+    self.onsite_paths = onsite_paths
+    self.offsite_paths = offsite_paths
+    self.pending_paths = []
     self.counts = {
       onsite_links_found: 0,
       offsite_links_found: 0,
@@ -30,7 +30,7 @@ class RubyLinkChecker
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
-      'a'             => [ onsite_pages, offsite_pages ],
+      'a'             => [ onsite_paths, offsite_paths ],
     }.to_json(*args)
   end
 
@@ -41,21 +41,21 @@ class RubyLinkChecker
   def check_links
     counts[:start_time] = Time.new
     # Seed pending with base url.
-    pending_pages << ''
-    # Work on the pendings.
-    until pending_pages.empty?
+    pending_paths << ''
+    # Work on the pending pages.
+    until pending_paths.empty?
       # Take the next pending page; skip if already done.
-      path = pending_pages.shift
-      next if onsite_pages[path]
+      path = pending_paths.shift
+      next if onsite_paths[path]
       # New page.
       page = Page.new(path)
       $stderr.puts "#{page.type} #{path}"
       page.check_page
       if page.onsite?
         next unless page.found
-        onsite_pages[path] = page
+        onsite_paths[path] = page
       else
-        offsite_pages[path] = page
+        offsite_paths[path] = page
       end
       # Pend any new paths.
       page.links.each do |link|
@@ -73,19 +73,19 @@ class RubyLinkChecker
           path = File.join(dirname, path)
         end
         # Skip if done or pending.
-        next if onsite_pages.include?(path)
-        next if offsite_pages.include?(path)
-        next if pending_pages.include?(path)
+        next if onsite_paths.include?(path)
+        next if offsite_paths.include?(path)
+        next if pending_paths.include?(path)
         # Pend it.
         # $stderr.puts path
-        pending_pages.push(path)
+        pending_paths.push(path)
       end
     end
     counts[:end_time] = Time.new
   end
 
   def verify_links
-    onsite_pages.each_pair do |path, page|
+    onsite_paths.each_pair do |path, page|
       page.links.each do |link|
         path, fragment = link.href.split('#')
         if path.nil? || path.empty?
@@ -98,8 +98,8 @@ class RubyLinkChecker
         elsif fragment.nil?
           # Path only.
           href = link.href.sub(%r[^\./], '').sub(%r[/$], '')
-          if onsite_pages.keys.include?(href) ||
-             offsite_pages.keys.include?(href)
+          if onsite_paths.keys.include?(href) ||
+             offsite_paths.keys.include?(href)
             link.status = :valid
           else
             link.status = :broken
@@ -120,7 +120,7 @@ class RubyLinkChecker
   end
 
   def target_page(path)
-    onsite_pages[path] || offsite_pages[path]
+    onsite_paths[path] || offsite_paths[path]
   end
 
   def generate_report
@@ -143,8 +143,8 @@ EOT
     h1 = body.add_element(Element.new('h1'))
     h1.text = "RDocLinkChecker Report (#{Time.now})"
     add_summary(body)
-    add_onsite_pages(body)
-    add_offsite_pages(body)
+    add_onsite_paths(body)
+    add_offsite_paths(body)
     doc.write($stdout, 2)
   end
 
@@ -190,7 +190,7 @@ EOT
     onsite_links = 0
     offsite_links = 0
     broken_links = 0
-    onsite_pages.each_pair do |path, page|
+    onsite_paths.each_pair do |path, page|
       page.links.each do |link|
         if RubyLinkChecker.onsite?(link.href)
           onsite_links += 1
@@ -201,8 +201,8 @@ EOT
       end
     end
     data = [
-      {'Onsite Pages' => :label, onsite_pages.size => :info},
-      {'Offsite Pages' => :label, offsite_pages.size => :info},
+      {'Onsite Pages' => :label, onsite_paths.size => :info},
+      {'Offsite Pages' => :label, offsite_paths.size => :info},
       {'Onsite Links' => :label, onsite_links => :info},
       {'Offsite Links' => :label, offsite_links => :info},
       {'Broken Links' => :label, broken_links => :bad},
@@ -212,9 +212,9 @@ EOT
     table2(body, data, 'summary')
   end
 
-  def add_onsite_pages(body)
+  def add_onsite_paths(body)
     h2 = body.add_element(Element.new('h2'))
-    h2.text = "Onsite Pages (#{onsite_pages.size})"
+    h2.text = "Onsite Pages (#{onsite_paths.size})"
 
     table = body.add_element('table')
     headers = ['Path', 'Ids', 'Onsite Links', 'Offsite Links', 'Broken Links']
@@ -224,8 +224,8 @@ EOT
       th.text = header
       th.add_attribute('class', Classes[:info])
     end
-    onsite_pages.keys.sort.each_with_index do |path, page_id|
-      page = onsite_pages[path]
+    onsite_paths.keys.sort.each_with_index do |path, page_id|
+      page = onsite_paths[path]
       if path.empty?
         path = BASE_URL
       end
@@ -262,7 +262,7 @@ EOT
         page.links.each do |link|
           next unless link.status == :broken
           path, fragment = link.href.split('#')
-          if onsite_pages[path] || offsite_pages[path]
+          if onsite_paths[path] || offsite_paths[path]
             error = 'Fragment not found'
             path_status = :good
             fragment_status = :bad
@@ -298,12 +298,12 @@ EOT
   end
 
 
-  def add_offsite_pages(body)
+  def add_offsite_paths(body)
     h2 = body.add_element(Element.new('h2'))
-    h2.text = "Offsite Pages (#{offsite_pages.size})"
+    h2.text = "Offsite Pages (#{offsite_paths.size})"
 
     paths_by_url = {}
-    offsite_pages.each_pair do |path, page|
+    offsite_paths.each_pair do |path, page|
       next unless page.found
       uri = URI(path)
       if uri.scheme.nil?

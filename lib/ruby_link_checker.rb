@@ -1,6 +1,7 @@
 require 'net/http'
 require 'rexml'
 require 'json'
+require 'json/add/time'
 
 # A class to check links on pages in the official Ruby documentation
 # at https://docs.ruby-lang.org/en/master.
@@ -12,25 +13,26 @@ class RubyLinkChecker
   # URL for documentation base page.
   BASE_URL = 'https://docs.ruby-lang.org/en/master'
 
-  attr_accessor :onsite_paths, :offsite_paths, :pending_paths, :counts
+  attr_accessor :onsite_paths, :offsite_paths, :counts
 
   # Return a new RubyLinkChecker object.
-  def initialize(onsite_paths = {}, offsite_paths = {})
+  def initialize(onsite_paths = {}, offsite_paths = {}, counts = {})
     self.onsite_paths = onsite_paths
     self.offsite_paths = offsite_paths
-    self.pending_paths = []
-    self.counts = {
-      onsite_links_found: 0,
-      offsite_links_found: 0,
-      links_checked: 0,
-      links_broken: 0,
-    }
+    if counts.empty?
+      counts = {
+        onsite_links_found: 0,
+        offsite_links_found: 0,
+      }
+    end
+    self.counts = counts
+    @pending_paths = []
   end
 
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
-      'a'             => [ onsite_paths, offsite_paths ],
+      'a'             => [ onsite_paths, offsite_paths, counts ],
     }.to_json(*args)
   end
 
@@ -38,14 +40,14 @@ class RubyLinkChecker
     new(*object['a'])
   end
 
-  def check_links
-    counts[:start_time] = Time.new
+  def gather_pages
+    counts[:gather_start_time] = Time.new
     # Seed pending with base url.
-    pending_paths << ''
+    @pending_paths << ''
     # Work on the pending pages.
-    until pending_paths.empty?
+    until @pending_paths.empty?
       # Take the next pending page; skip if already done.
-      path = pending_paths.shift
+      path = @pending_paths.shift
       next if onsite_paths[path]
       # New page.
       page = Page.new(path)
@@ -75,13 +77,20 @@ class RubyLinkChecker
         # Skip if done or pending.
         next if onsite_paths.include?(path)
         next if offsite_paths.include?(path)
-        next if pending_paths.include?(path)
+        next if @pending_paths.include?(path)
         # Pend it.
         # $stderr.puts path
-        pending_paths.push(path)
+        @pending_paths.push(path)
       end
     end
-    counts[:end_time] = Time.new
+    counts[:gather_end_time] = Time.new
+  end
+
+  def evaluate_links
+    counts['evaluate_start_time'] = Time.new
+    verify_links
+    generate_report
+    counts['evaluate_end_time'] = Time.new
   end
 
   def verify_links
@@ -186,8 +195,28 @@ EOT
     end
   end
 
+  TIME_FORMAT = '%Y-%m-%e-%a-%k:%M:%SZ'
+
+  def formatted_times(start_time, end_time)
+    minutes, seconds = (end_time - start_time).divmod(60)
+    elapsed = "%d:%02d" % [minutes, seconds]
+    [start_time.strftime(TIME_FORMAT), end_time.strftime(TIME_FORMAT),  elapsed]
+  end
+
   def add_summary(body)
-    time = Time.now.strftime('%Y-%m-%e-%a-%k:%M:%SZ')
+    h2 = body.add_element(Element.new('h2'))
+    h2.text = 'Summary'
+
+    start_time, end_time, duration =
+      formatted_times(counts['gather_start_time'], counts['gather_end_time'])
+    data = [
+      {'Start Time' => :label, start_time => :info},
+      {'End Time' => :label, end_time => :info},
+      {'Duration' => :label, duration => :info},
+    ]
+    table2(body, data, 'gathering', 'Gathering')
+
+
     onsite_links = 0
     offsite_links = 0
     broken_links = 0
@@ -202,16 +231,13 @@ EOT
       end
     end
     data = [
-      {'Time' => :label, time => :info},
       {'Onsite Pages' => :label, onsite_paths.size => :info},
       {'Offsite Pages' => :label, offsite_paths.size => :info},
       {'Onsite Links' => :label, onsite_links => :info},
       {'Offsite Links' => :label, offsite_links => :info},
       {'Broken Links' => :label, broken_links => :bad},
     ]
-    h2 = body.add_element(Element.new('h2'))
-    h2.text = 'Summary'
-    table2(body, data, 'summary')
+    table2(body, data, 'summary', 'Pages and Links')
   end
 
   def add_onsite_paths(body)
@@ -601,11 +627,10 @@ end
 
 if $0 == __FILE__
   # checker = RubyLinkChecker.new
-  # checker.check_links
-  # json = JSON.generate(checker)
+  # checker.gather_pages
+  # json = JSON.pretty_generate(checker)
   # File.write('t.json', json)
   json = File.read('t.json')
   checker = JSON.parse(json, create_additions: true)
-  checker.verify_links
-  checker.generate_report
+  checker.evaluate_links
 end

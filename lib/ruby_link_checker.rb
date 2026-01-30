@@ -151,6 +151,8 @@ EOT
     body = html.add_element(Element.new('body'))
     h1 = body.add_element(Element.new('h1'))
     h1.text = "RDocLinkChecker Report"
+    h2 = body.add_element('h2')
+    h2.text = 'Generated: ' + Time.now.strftime(TIME_FORMAT)
     add_summary(body)
     add_onsite_paths(body)
     add_offsite_paths(body)
@@ -214,8 +216,7 @@ EOT
       {'End Time' => :label, end_time => :info},
       {'Duration' => :label, duration => :info},
     ]
-    table2(body, data, 'gathering', 'Gathering')
-
+    table2(body, data, 'gathering', 'Gathered Time')
 
     onsite_links = 0
     offsite_links = 0

@@ -21,8 +21,8 @@ class RubyLinkChecker
     self.offsite_paths = offsite_paths
     if counts.empty?
       counts = {
-        onsite_links_found: 0,
-        offsite_links_found: 0,
+        'onsite_links_found' => 0,
+        'offsite_links_found' => 0,
       }
     end
     self.counts = counts
@@ -41,7 +41,7 @@ class RubyLinkChecker
   end
 
   def gather_pages
-    counts[:gather_start_time] = Time.new
+    counts['gather_start_time'] = Time.new
     # Seed pending with base url.
     @pending_paths << ''
     # Work on the pending pages.
@@ -62,9 +62,9 @@ class RubyLinkChecker
       # Pend any new paths.
       page.links.each do |link|
         if RubyLinkChecker.onsite?(link.href)
-          counts[:onsite_links_found] += 1
+          counts['onsite_links_found'] += 1
         else
-          counts[:offsite_links_found] += 1
+          counts['offsite_links_found'] += 1
         end
         href = link.href
         next if href.start_with?('#')
@@ -83,7 +83,7 @@ class RubyLinkChecker
         @pending_paths.push(path)
       end
     end
-    counts[:gather_end_time] = Time.new
+    counts['gather_end_time'] = Time.new
   end
 
   def evaluate_links
@@ -627,10 +627,10 @@ EOT
 end
 
 if $0 == __FILE__
-  # checker = RubyLinkChecker.new
-  # checker.gather_pages
-  # json = JSON.pretty_generate(checker)
-  # File.write('t.json', json)
+  checker = RubyLinkChecker.new
+  checker.gather_pages
+  json = JSON.pretty_generate(checker)
+  File.write('t.json', json)
   json = File.read('t.json')
   checker = JSON.parse(json, create_additions: true)
   checker.evaluate_links

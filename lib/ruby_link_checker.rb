@@ -450,9 +450,17 @@ EOT
       return unless content_type_html?(response)
       # Get the HTML body.
       body = response.body
+      unless ids.empty?
+        message = "Ids already gathered for #{path}."
+        raise RuntimeError.new(message)
+      end
       gather_ids(body)
       # $stderr.puts "    Ids: #{ids.size} #{path}"
       return unless RubyLinkChecker.onsite?(path)
+      unless links.empty?
+        message = "Links already gathered for #{path}."
+        raise RuntimeError.new(message)
+      end
       gather_links(path, body)
       # $stderr.puts "    Links: #{links.size} #{path}"
     end
@@ -537,33 +545,12 @@ EOT
 
     def gather_ids(body)
       body.lines.each do |line|
-        line.chomp!
-        # $stderr.puts line if line.match('anchor')
-        next if line.match('footmark')
-        next if line.match('foottext')
-        next unless line.match(%r[id=])
-        next unless line.match(%r[<(\w+)])
-        end_tag = "</#{$1}>"
-        line += '>' unless line.end_with?('>')
-        line += end_tag unless line.end_with?(end_tag)
-        line.sub!(' hidden', ' hidden="true"')
-        begin
-          doc = REXML::Document.new(line)
-          eles = REXML::XPath.match(doc, '//*')
-          names = eles.map{|element| element.name }
-          # $stderr.puts names.to_s if names.include?('dt')
-          eles.each do |element|
-            id = element.attributes['id']
-            ids.push(id) if id
-          end
-        rescue REXML::ParseException => x
-          message = "REXML::Document.new(line) failed for #{line}."
-          exception = IdParseException.new(message, 'line', line, x)
-          self.exceptions << exception
+        values = RubyLinkChecker.get_attribute_values(line, %w[ id name ])
+        values.each do |value|
+          ids.push(value)
         end
       end
     end
-
   end
 
   class Link
@@ -594,6 +581,20 @@ EOT
       # p object
       new(*object['a'])
     end
+  end
+
+  def self.get_attribute_values(s, attribute_names)
+    re = Regexp.new('(' + attribute_names.join('|') + ')')
+    values = []
+    scanner = StringScanner.new(s)
+    while (s0 = scanner.check_until(/(id|name)="/))
+      scanner.pos += s0.length
+      if (s1 = scanner.check_until(/"/))
+        value = s1[0..-2]
+        values.push(value)
+      end
+    end
+    values
   end
 
   class RubyLinkCheckerException < Exception
@@ -627,6 +628,8 @@ EOT
 end
 
 if $0 == __FILE__
+  checker = RubyLinkChecker.new
+  s ='<span id="foo" id="bar" name="baz" name="bat"></span>'
   checker = RubyLinkChecker.new
   checker.gather_pages
   json = JSON.pretty_generate(checker)

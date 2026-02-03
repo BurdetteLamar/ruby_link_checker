@@ -588,10 +588,10 @@ EOT
   end
 
   def self.get_attribute_values(s, attribute_names)
-    re = Regexp.new('(' + attribute_names.join('|') + ')')
+    re = Regexp.new('(' + attribute_names.join('|') + ')="')
     values = []
     scanner = StringScanner.new(s)
-    while (s0 = scanner.check_until(/(id|name)="/))
+    while (s0 = scanner.check_until(re))
       scanner.pos += s0.length
       if (s1 = scanner.check_until(/"/))
         value = s1[0..-2]

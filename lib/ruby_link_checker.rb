@@ -88,6 +88,7 @@ class RubyLinkChecker
 
   def evaluate_links
     counts['evaluate_start_time'] = Time.new
+    s ='<span id="foo" id="bar" name="baz" name="bat"></span>'
     verify_links
     generate_report
     counts['evaluate_end_time'] = Time.new
@@ -280,7 +281,7 @@ EOT
           td.add_attribute('align', 'right')
         end
       end
-      next if broken_links.empty?
+      next if broken_links.empty? && page.exceptions.empty?
       h3 = body.add_element('h3')
       h3.add_attribute('id', page_id)
       a = Element.new('a')
@@ -311,16 +312,14 @@ EOT
           table2(body, data, "#{path}-summary")
         end
       end
-      # unless page.exceptions.empty?
-      #   page.exceptions.each do |exception|
-      #     ul = body.add_element('ul')
-      #     %i[message argname argvalue exception_class exception_message].each do |method|
-      #       value = exception.send(method)
-      #       li = ul.add_element('li')
-      #       li.text = "#{method}: #{value}"
-      #     end
-      #   end
-      # end
+      page.exceptions.each do |exception|
+        ul = body.add_element('ul')
+        %i[message argname argvalue exception].each do |method|
+          value = exception.send(method)
+          li = ul.add_element('li')
+          li.text = "#{method}: #{value}"
+        end
+      end
 
       body.add_element(Element.new('p'))
     end
@@ -408,7 +407,7 @@ EOT
       when path.match(/^[A-Z]/)
         :class
       else
-        :unknown
+        :page
       end
     end
 
@@ -433,6 +432,8 @@ EOT
         uri = URI(url)
       rescue => x
         message = "URI(url) failed for #{url}."
+        $stderr.puts path
+        $stderr.puts message
         exception = URIParseException.new(message, 'url', url, x)
         exceptions << exception
       end
@@ -442,6 +443,8 @@ EOT
         self.found = true
       rescue => x
         message = "Net::HTTP.get_response(uri) failed for #{uri}."
+        $stderr.puts path
+        $stderr.puts message
         exception = HTTPResponseException.new(message, 'uri', uri, x)
         exceptions << exception
       end
@@ -513,7 +516,6 @@ EOT
         end
         # Use REXML to parse each anchor.
         get_anchors(snippet).each do |anchor|
-          next if anchor.match('<img ')
           begin
             doc = REXML::Document.new(anchor)
             href = doc.root.attributes['href']
@@ -523,6 +525,8 @@ EOT
             # $stderr.puts "    Href: #{RubyLinkChecker.onsite?(href)} #{href}"
           rescue REXML::ParseException => x
             message = "REXML::Document.new(anchor) failed for #{anchor}."
+            $stderr.puts page_path
+            $stderr.puts message
             exception = AnchorParseException.new(message, 'anchor', anchor, x)
             exceptions << exception
           end
@@ -598,15 +602,26 @@ EOT
   end
 
   class RubyLinkCheckerException < Exception
-    attr_accessor :message, :argname, :argvalue, :exception_class, :exception_message
-    def initialize(message, argname, argval, exception)
+    attr_accessor :message, :argname, :argvalue, :exception
+    def initialize(message, argname, argvalue, exception)
       super(message)
       self.message = message
       self.argname = argname
       self.argvalue = argvalue
-      self.exception_class = exception.class.to_s
-      self.exception_message = exception.message
+      self.exception = exception
     end
+
+    def to_json(*args)
+      {
+        JSON.create_id  => self.class.name,
+        'a'             => [ message, argname, argvalue, exception ],
+      }.to_json(*args)
+    end
+
+    def self.json_create(object)
+      new(*object['a'])
+    end
+
   end
 
   class URIParseException < RubyLinkCheckerException
@@ -628,8 +643,6 @@ EOT
 end
 
 if $0 == __FILE__
-  checker = RubyLinkChecker.new
-  s ='<span id="foo" id="bar" name="baz" name="bat"></span>'
   checker = RubyLinkChecker.new
   checker.gather_pages
   json = JSON.pretty_generate(checker)

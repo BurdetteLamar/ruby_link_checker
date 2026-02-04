@@ -64,19 +64,19 @@ class RubyLinkChecker
         end
         href = link.href
         next if href.start_with?('#')
-        path = href.sub(%r[^\./], '').sub(%r[/$], '')
-        path, _ = path.split('#')
+        _path = href.sub(%r[^\./], '').sub(%r[/$], '')
+        _path, _ = _path.split('#')
         dirname = link.dirname
-        if RubyLinkChecker.onsite?(path) && dirname != '.'
-          path = File.join(dirname, path)
+        if RubyLinkChecker.onsite?(_path) && dirname != '.'
+          _path = File.join(dirname, _path)
         end
         # Skip if done or pending.
-        next if onsite_paths.include?(path)
-        next if offsite_paths.include?(path)
-        next if @pending_paths.include?(path)
+        next if onsite_paths.include?(_path)
+        next if offsite_paths.include?(_path)
+        next if @pending_paths.include?(_path)
         # Pend it.
-        # $stderr.puts path
-        @pending_paths.push(path)
+        # $stderr.puts _path
+        @pending_paths.push(_path)
       end
     end
     counts['gather_end_time'] = Time.new

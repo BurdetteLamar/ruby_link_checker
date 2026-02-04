@@ -89,18 +89,6 @@ class Page
     # $stderr.puts "    Links: #{links.size} #{path}"
   end
 
-  def to_json(*args)
-    {
-      JSON.create_id  => self.class.name,
-      'a'             => [ path, links, ids, exceptions, found, type]
-    }.to_json(*args)
-  end
-
-  def self.json_create(object)
-    # p object
-    new(*object['a'])
-  end
-
   # Returns whether the code is bad (zero or >= 400).
   def code_bad?(response)
     return false if response.nil?
@@ -174,4 +162,17 @@ class Page
       end
     end
   end
+
+  def to_json(*args)
+    {
+      JSON.create_id  => self.class.name,
+      'a'             => [ path, links, ids, exceptions, found, type]
+    }.to_json(*args)
+  end
+
+  def self.json_create(object)
+    # p object
+    new(*object['a'])
+  end
+
 end

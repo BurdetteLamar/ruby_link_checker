@@ -36,17 +36,6 @@ class RubyLinkChecker
     @pending_paths = []
   end
 
-  def to_json(*args)
-    {
-      JSON.create_id  => self.class.name,
-      'a'             => [ onsite_paths, offsite_paths, counts ],
-    }.to_json(*args)
-  end
-
-  def self.json_create(object)
-    new(*object['a'])
-  end
-
   def gather_pages
     counts['gather_start_time'] = Time.new
     # Seed pending with base url.
@@ -91,11 +80,14 @@ class RubyLinkChecker
       end
     end
     counts['gather_end_time'] = Time.new
+    json = JSON.pretty_generate(self)
+    File.write('t.json', json)
   end
 
   def evaluate_links
     counts['evaluate_start_time'] = Time.new
-    s ='<span id="foo" id="bar" name="baz" name="bat"></span>'
+    json = File.read('t.json')
+    JSON.parse(json, create_additions: true)
     verify_links
     generate_report
     counts['evaluate_end_time'] = Time.new
@@ -397,14 +389,21 @@ EOT
     values
   end
 
+  def to_json(*args)
+    {
+      JSON.create_id  => self.class.name,
+      'a'             => [ onsite_paths, offsite_paths, counts ],
+    }.to_json(*args)
+  end
+
+  def self.json_create(object)
+    new(*object['a'])
+  end
+
 end
 
 if $0 == __FILE__
   checker = RubyLinkChecker.new
   checker.gather_pages
-  json = JSON.pretty_generate(checker)
-  File.write('t.json', json)
-  json = File.read('t.json')
-  checker = JSON.parse(json, create_additions: true)
   checker.evaluate_links
 end

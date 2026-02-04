@@ -25,5 +25,6 @@ class Link
   def self.json_create(object)
     # p object
     new(*object['a'])
+
   end
 end

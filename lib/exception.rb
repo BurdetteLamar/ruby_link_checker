@@ -1,5 +1,7 @@
 class RubyLinkCheckerException < Exception
+
   attr_accessor :message, :argname, :argvalue, :exception
+
   def initialize(message, argname, argvalue, exception)
     super(message)
     self.message = message
@@ -21,18 +23,9 @@ class RubyLinkCheckerException < Exception
 
 end
 
-class URIParseException < RubyLinkCheckerException
+class URIParseException < RubyLinkCheckerException; end
 
-end
+class HTTPResponseException < RubyLinkCheckerException; end
 
-class HTTPResponseException < RubyLinkCheckerException
+class AnchorParseException < RubyLinkCheckerException; end
 
-end
-
-class AnchorParseException < RubyLinkCheckerException
-
-end
-
-class IdParseException < RubyLinkCheckerException
-
-end

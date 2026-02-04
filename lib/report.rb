@@ -4,6 +4,8 @@ class Report
 
   include REXML
 
+  TIME_FORMAT = '%Y-%m-%d-%a-%k:%M:%SZ'
+
   CSS_STYLES = <<EOT
 *        { font-family: sans-serif }
 .data    { font-family: courier }
@@ -46,45 +48,9 @@ EOT
     add_summary(body)
     add_onsite_paths(body)
     add_offsite_paths(body)
+
     doc.write($stdout, 2)
-  end
 
-  def table2(parent, data, id = nil, title = nil)
-    data = data.dup
-    table = parent.add_element(Element.new('table'))
-    table.add_attribute('id', id) if id
-    if title
-      tr = table.add_element(Element.new('tr)'))
-      th = tr.add_element(Element.new('th'))
-      th.add_attribute('colspan', 2)
-      if title.kind_of?(REXML::Element)
-        th.add_element(title)
-      else
-        th.text = title
-      end
-    end
-    data.each do |row_h|
-      label, label_class, value, value_class = row_h.flatten
-      tr = table.add_element(Element.new('tr'))
-      td = tr.add_element(Element.new('td'))
-      td.text = label
-      td.add_attribute('class', CSS_CLASSES[label_class])
-      td = tr.add_element(Element.new('td'))
-      if value.kind_of?(REXML::Element)
-        td.add_element(value)
-      else
-        td.text = value
-      end
-      td.add_attribute('class', CSS_CLASSES[value_class])
-    end
-  end
-
-  TIME_FORMAT = '%Y-%m-%d-%a-%k:%M:%SZ'
-
-  def formatted_times(start_time, end_time)
-    minutes, seconds = (end_time - start_time).divmod(60)
-    elapsed = "%d:%02d" % [minutes, seconds]
-    [start_time.strftime(TIME_FORMAT), end_time.strftime(TIME_FORMAT),  elapsed]
   end
 
   def add_title(body)
@@ -213,7 +179,6 @@ EOT
     end
   end
 
-
   def add_offsite_paths(body)
     h2 = body.add_element(Element.new('h2'))
     h2.text = "Offsite Pages (#{@checker.offsite_paths.size})"
@@ -250,6 +215,42 @@ EOT
         a.add_attribute('href', File.join(url, path))
       end
     end
+  end
+
+  def table2(parent, data, id = nil, title = nil)
+    data = data.dup
+    table = parent.add_element(Element.new('table'))
+    table.add_attribute('id', id) if id
+    if title
+      tr = table.add_element(Element.new('tr)'))
+      th = tr.add_element(Element.new('th'))
+      th.add_attribute('colspan', 2)
+      if title.kind_of?(REXML::Element)
+        th.add_element(title)
+      else
+        th.text = title
+      end
+    end
+    data.each do |row_h|
+      label, label_class, value, value_class = row_h.flatten
+      tr = table.add_element(Element.new('tr'))
+      td = tr.add_element(Element.new('td'))
+      td.text = label
+      td.add_attribute('class', CSS_CLASSES[label_class])
+      td = tr.add_element(Element.new('td'))
+      if value.kind_of?(REXML::Element)
+        td.add_element(value)
+      else
+        td.text = value
+      end
+      td.add_attribute('class', CSS_CLASSES[value_class])
+    end
+  end
+
+  def formatted_times(start_time, end_time)
+    minutes, seconds = (end_time - start_time).divmod(60)
+    elapsed = "%d:%02d" % [minutes, seconds]
+    [start_time.strftime(TIME_FORMAT), end_time.strftime(TIME_FORMAT),  elapsed]
   end
 
 end

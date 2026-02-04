@@ -169,6 +169,6 @@ end
 
 if $0 == __FILE__
   checker = RubyLinkChecker.new
-  # checker.create_stash
+  checker.create_stash
   checker.create_report
 end

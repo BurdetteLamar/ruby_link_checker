@@ -4,16 +4,7 @@ class Report
 
   include REXML
 
-  def initialize(checker)
-    @checker = checker
-    $stderr.puts @checker.counts
-    doc = REXML::Document.new('')
-    html = doc.add_element(Element.new('html'))
-    head = html.add_element(Element.new('head'))
-    title = head.add_element(Element.new('title'))
-    title.text = 'RubyLinkChecker Report'
-    style = head.add_element(Element.new('style'))
-    style.text = <<EOT
+  CSS_STYLES = <<EOT
 *        { font-family: sans-serif }
 .data    { font-family: courier }
 .text    { text-align: left }
@@ -23,18 +14,8 @@ class Report
 .bad     { color: rgb(156,   0,   6); background-color: rgb(255, 199, 206) } /* Reddish */
 .info    { color: rgb(  0,   0,   0); background-color: rgb(217, 217, 214) } /* Grayish */
 EOT
-    body = html.add_element(Element.new('body'))
-    h1 = body.add_element(Element.new('h1'))
-    h1.text = "RDocLinkChecker Report"
-    h2 = body.add_element('h2')
-    h2.text = 'Generated: ' + Time.now.strftime(TIME_FORMAT)
-    add_summary(body)
-    add_onsite_paths(body)
-    add_offsite_paths(body)
-    doc.write($stdout, 2)
-  end
 
-  Classes = {
+  CSS_CLASSES = {
     label: 'text info',
     good_text: 'data text good',
     iffy_text: 'data text iffy',
@@ -45,6 +26,28 @@ EOT
     bad_count: 'data count bad',
     info_count: 'data count info',
   }
+
+  # Create the report for info gathered by the checker.
+  def initialize(checker)
+
+    @checker = checker
+
+    doc = REXML::Document.new('')
+    html = doc.add_element(Element.new('html'))
+
+    head = html.add_element(Element.new('head'))
+    title = head.add_element(Element.new('title'))
+    title.text = 'RubyLinkChecker Report'
+    style = head.add_element(Element.new('style'))
+    style.text = CSS_STYLES
+
+    body = html.add_element(Element.new('body'))
+    add_title(body)
+    add_summary(body)
+    add_onsite_paths(body)
+    add_offsite_paths(body)
+    doc.write($stdout, 2)
+  end
 
   def table2(parent, data, id = nil, title = nil)
     data = data.dup
@@ -65,14 +68,14 @@ EOT
       tr = table.add_element(Element.new('tr'))
       td = tr.add_element(Element.new('td'))
       td.text = label
-      td.add_attribute('class', Classes[label_class])
+      td.add_attribute('class', CSS_CLASSES[label_class])
       td = tr.add_element(Element.new('td'))
       if value.kind_of?(REXML::Element)
         td.add_element(value)
       else
         td.text = value
       end
-      td.add_attribute('class', Classes[value_class])
+      td.add_attribute('class', CSS_CLASSES[value_class])
     end
   end
 
@@ -82,6 +85,13 @@ EOT
     minutes, seconds = (end_time - start_time).divmod(60)
     elapsed = "%d:%02d" % [minutes, seconds]
     [start_time.strftime(TIME_FORMAT), end_time.strftime(TIME_FORMAT),  elapsed]
+  end
+
+  def add_title(body)
+    h1 = body.add_element(Element.new('h1'))
+    h1.text = "RDocLinkChecker Report"
+    h2 = body.add_element('h2')
+    h2.text = 'Generated: ' + Time.now.strftime(TIME_FORMAT)
   end
 
   def add_summary(body)
@@ -130,7 +140,7 @@ EOT
     headers.each do |header|
       th = tr.add_element('th')
       th.text = header
-      th.add_attribute('class', Classes[:info])
+      th.add_attribute('class', CSS_CLASSES[:info_text])
     end
     @checker.onsite_paths.keys.sort.each_with_index do |path, page_id|
       page = @checker.onsite_paths[path]

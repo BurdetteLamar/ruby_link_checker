@@ -16,11 +16,12 @@ class Report
     style.text = <<EOT
 *        { font-family: sans-serif }
 .data    { font-family: courier }
-.center  { text-align: center }
+.text    { text-align: left }
+.count   { text-align: right }
 .good    { color: rgb(  0,  97,   0); background-color: rgb(198, 239, 206) } /* Greenish */
 .iffy    { color: rgb(156, 101,   0); background-color: rgb(255, 235, 156) } /* Yellowish */
 .bad     { color: rgb(156,   0,   6); background-color: rgb(255, 199, 206) } /* Reddish */
-.neutral { color: rgb(  0,   0,   0); background-color: rgb(217, 217, 214) } /* Grayish */
+.info    { color: rgb(  0,   0,   0); background-color: rgb(217, 217, 214) } /* Grayish */
 EOT
     body = html.add_element(Element.new('body'))
     h1 = body.add_element(Element.new('h1'))
@@ -34,11 +35,15 @@ EOT
   end
 
   Classes = {
-    label: 'label center neutral',
-    good: 'data center good',
-    iffy: 'data center iffy',
-    bad: 'data center bad',
-    info: 'data center neutral',
+    label: 'text info',
+    good_text: 'data text good',
+    iffy_text: 'data text iffy',
+    bad_text: 'data text bad',
+    info_text: 'data text info',
+    good_count: 'data count good',
+    iffy_count: 'data count iffy',
+    bad_count: 'data count bad',
+    info_count: 'data count info',
   }
 
   def table2(parent, data, id = nil, title = nil)
@@ -71,7 +76,7 @@ EOT
     end
   end
 
-  TIME_FORMAT = '%Y-%m-%e-%a-%k:%M:%SZ'
+  TIME_FORMAT = '%Y-%m-%d-%a-%k:%M:%SZ'
 
   def formatted_times(start_time, end_time)
     minutes, seconds = (end_time - start_time).divmod(60)
@@ -86,9 +91,9 @@ EOT
     start_time, end_time, duration =
       formatted_times(@checker.counts['gather_start_time'], @checker.counts['gather_end_time'])
     data = [
-      {'Start Time' => :label, start_time => :info},
-      {'End Time' => :label, end_time => :info},
-      {'Duration' => :label, duration => :info},
+      {'Start Time' => :label, start_time => :info_text},
+      {'End Time' => :label, end_time => :info_text},
+      {'Duration' => :label, duration => :info_text},
     ]
     table2(body, data, 'gathering', 'Gathered Time')
 
@@ -106,11 +111,11 @@ EOT
       end
     end
     data = [
-      {'Onsite Pages' => :label, @checker.onsite_paths.size => :info},
-      {'Offsite Pages' => :label, @checker.offsite_paths.size => :info},
-      {'Onsite Links' => :label, onsite_links => :info},
-      {'Offsite Links' => :label, offsite_links => :info},
-      {'Broken Links' => :label, broken_links => :bad},
+      {'Onsite Pages' => :label, @checker.onsite_paths.size => :info_count},
+      {'Offsite Pages' => :label, @checker.offsite_paths.size => :info_count},
+      {'Onsite Links' => :label, onsite_links => :info_count},
+      {'Offsite Links' => :label, offsite_links => :info_count},
+      {'Broken Links' => :label, broken_links => :bad_count},
     ]
     table2(body, data, 'summary', 'Pages and Links')
   end
@@ -167,20 +172,20 @@ EOT
           path, fragment = link.href.split('#')
           if @checker.onsite_paths[path] || @checker.offsite_paths[path]
             error = 'Fragment not found'
-            path_status = :good
-            fragment_status = :bad
+            path_status = :good_text
+            fragment_status =  @checker.offsite_paths[path] ? :iffy_text : :bad_text
           else
             error = 'Page Not Found'
-            path_status = :bad
-            fragment_status = :info
+            path_status = :bad_text
+            fragment_status = :info_text
           end
           h4 = body.add_element('h4')
           h4.text = error
           data = [
             {'Path' => :label, path => path_status},
             {'Fragment' => :label, fragment => fragment_status},
-            {'Text' => :label, link.text => :info},
-            {'Line Number' => :label, link.lineno => :info},
+            {'Text' => :label, link.text => :info_text},
+            {'Line Number' => :label, link.lineno => :info_text},
           ]
           table2(body, data, "#{path}-summary")
         end

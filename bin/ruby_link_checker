@@ -6,6 +6,7 @@ require_relative '../lib/ruby_link_checker'
 parser = OptionParser.new
 
 parser.banner = <<-EOF
+
 Usage: #{$0} [options]
 
   - Checks links in the Ruby HTML documentation found at #{RubyLinkChecker::BASE_URL}.
@@ -16,9 +17,29 @@ Usage: #{$0} [options]
     - Broken links in onsite pages (including both page not found and fragment not found).
     - Offsite pages found.
 
+  The Report
+
   The report is an HTML file located in the directory
   given by option --dirpath (default is './ruby_link_checker'),
   and whose filename is given by option --report-filename (default is a timestamped name).
+
+  User Options
+
+  Option --help causes the link checker to print its help text, then exit.
+
+  Option --version causes the link checker to print its version, then exit.
+
+  Option --verbosity controls the quantity of progress messages to be printed.
+  The default value is minimal; value quiet suppresses progress messages.
+
+  Option --forgive may be used to suppress unwanted information
+  about broken links.  In particular, the Ruby team has determined that
+  broken links on the NEWS and LEGAL pages should not be fixed, and therefore
+  perhaps should not be reported.
+
+  Developer Options
+
+  Some options may be of use in developing or debugging the link checker.
 
   By default, reads the documentation pages and writes the report, also creating
   a JSON "stash" file in the directory given by option --dirpath (as above),
@@ -32,19 +53,14 @@ Usage: #{$0} [options]
     and the stash file is not to be written;  the report is to be based
     on the most recent stash file.
 
-  These options are mainly for development and debugging;  work on the reporting
-  code may not need a fresh stash file for each report.
-
   Option --verbosity may also be useful for development and debugging.
-  Setting the verbosity to verbose tells the link checker to print a lot
-  of progess messages.
-
-  Finally, option --forgive may be used to suppress unwanted information
-  about broken links.  In particular, the Ruby team has determined that
-  broken links on the NEWS and LEGAL pages should not be fixes, and therefore
-  perhaps should not be reported.
+  Setting the verbosity value to debug tells the link checker to print a lot
+  of progress messages.
 
 EOF
+
+parser.separator('Basic Options')
+
 parser.on(
   '--dirpath DIRPATH',
   'Path to directory containing stashes and reports.',
@@ -66,6 +82,14 @@ parser.on(
 )
 
 parser.on(
+  '--forgive PATTERN',
+  'Do not report broken links on pages matching the pattern.',
+  '    May be given more than once.'
+)
+
+parser.separator('Developer Options')
+
+parser.on(
   '--stash-only',
   'Read Ruby documents and write new stash;',
   '    do not create new report.'
@@ -78,16 +102,10 @@ parser.on(
 )
 
 parser.on(
-  '--forgive PATTERN',
-  'Do not report broken links on pages matching the pattern.',
-  '    May be given more than once.'
-)
-
-parser.on(
   '--verbosity LEVEL',
   'Set verbosity level to one of:',
   '    quiet: Print no progress messages.',
-  '    normal: (default) Print some progress messages',
+  '    minimal: (default) Print some progress messages',
   '    debug: Print extensive progress messages.'
 )
 

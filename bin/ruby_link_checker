@@ -25,17 +25,22 @@ Usage: #{$0} [options]
 
   User Options
 
+  Option --verbosity controls the quantity of progress messages to be printed.
+  The default value is 'minimal'; value 'quiet' suppresses progress messages.
+
+  Option --
+
+  Options --report-news and --report-legal specify that broken links
+  on NEWS and LEGAL pages are to be reported. By default, these are not reported,
+  because the Ruby core team has determined that the underlying NEWS and LEGAL
+  pages are historical in nature and should not be modified.
+
+  Option --report-github-lines specifies that a line-number fragment on a GitHub page
+  is to be reported as not-found. By default, this is not reported.
+
   Option --help causes the link checker to print its help text, then exit.
 
   Option --version causes the link checker to print its version, then exit.
-
-  Option --verbosity controls the quantity of progress messages to be printed.
-  The default value is minimal; value quiet suppresses progress messages.
-
-  Option --forgive may be used to suppress unwanted information
-  about broken links.  In particular, the Ruby team has determined that
-  broken links on the NEWS and LEGAL pages should not be fixed, and therefore
-  perhaps should not be reported.
 
   Developer Options
 
@@ -54,8 +59,8 @@ Usage: #{$0} [options]
     on the most recent stash file.
 
   Option --verbosity may also be useful for development and debugging.
-  Setting the verbosity value to debug tells the link checker to print a lot
-  of progress messages.
+  Setting the verbosity value to 'debug' tells the link checker to print
+  all its progress messages.
 
 EOF
 
@@ -82,10 +87,19 @@ parser.on(
 )
 
 parser.on(
-  '--forgive PATTERN',
-  'Do not report broken links on pages matching the pattern.',
-  '    May be given more than once.'
-)
+  '--report-github-lines',
+  'Report line-number fragments on GitHub pages.',
+  )
+
+parser.on(
+  '--report-legal',
+  'Report broken links on LEGAL pages.',
+  )
+
+parser.on(
+  '--report-news',
+  'Report broken links on NEWS pages.',
+  )
 
 parser.separator('Developer Options')
 
@@ -123,7 +137,10 @@ options = {
   'stash-filename' => nil,
   'stash-only' => false,
   'report-only' => false,
-  'quiet' => false,
+  'verbosity' => 'minimal',
+  'report-github-lines' => false,
+  'report-legal' => false,
+  'report-news' => false,
 }
 
 parser.parse!(into: options)

@@ -64,73 +64,6 @@ Usage: #{$0} [options]
 
 EOF
 
-parser.separator('Basic Options')
-
-parser.on(
-  '--dirpath DIRPATH',
-  'Path to directory containing stashes and reports.',
-  '    The default is ./ruby_link_checker.'
-)
-
-parser.on(
-  '--stash-filename FILENAME',
-  'Name of JSON stash file.',
-  '    The default is a timestamped filename',
-  '    (e.g., 2026-02-04-Wed-18:47:24Z.json).'
-)
-
-parser.on(
-  '--report-filename FILENAME',
-  'Name of HTML report file.',
-  '    The default is a timestamped filename',
-  '    (e.g., 2026-02-04-Wed-18:47:24Z.html)'
-)
-
-parser.on(
-  '--report-github-lines',
-  'Report line-number fragments on GitHub pages.',
-  )
-
-parser.on(
-  '--report-legal',
-  'Report broken links on LEGAL pages.',
-  )
-
-parser.on(
-  '--report-news',
-  'Report broken links on NEWS pages.',
-  )
-
-parser.separator('Developer Options')
-
-parser.on(
-  '--stash-only',
-  'Read Ruby documents and write new stash;',
-  '    do not create new report.'
-)
-
-parser.on(
-  '--report-only',
-  'Read existing stash and write new report;',
-  '    do not read Ruby documents or write new stash.'
-)
-
-parser.on(
-  '--verbosity LEVEL',
-  'Set verbosity level to one of:',
-  '    quiet: Print no progress messages.',
-  '    minimal: (default) Print some progress messages',
-  '    debug: Print extensive progress messages.'
-)
-
-parser.on(
-  '--version',
-  'Print the version and exit.',
-) do
-  puts RubyLinkChecker::VERSION
-  exit
-end
-
 options = {
   'dirpath' => nil,
   'report-filename' => nil,
@@ -143,5 +76,90 @@ options = {
   'report-news' => false,
 }
 
-parser.parse!(into: options)
+parser.separator('Basic Options')
+
+parser.on(
+  '--dirpath DIRPATH',
+  'Path to directory containing stashes and reports.',
+  '    The default is ./ruby_link_checker.'
+) do |arg|
+  options['dirpath'] = arg
+end
+
+parser.on(
+  '--stash-filename FILENAME',
+  'Name of JSON stash file.',
+  '    The default is a timestamped filename',
+  '    (e.g., 2026-02-04-Wed-18:47:24Z.json).'
+) do |arg|
+  options['stash-filename'] = arg
+end
+
+parser.on(
+  '--report-filename FILENAME',
+  'Name of HTML report file.',
+  '    The default is a timestamped filename',
+  '    (e.g., 2026-02-04-Wed-18:47:24Z.html)'
+) do |arg|
+  options['report-filename'] = arg
+end
+
+parser.on(
+  '--report-github-lines',
+  'Report line-number fragments on GitHub pages.',
+  )  do |arg|
+  options['report-github-lines'] = arg
+end
+
+parser.on(
+  '--report-legal',
+  'Report broken links on LEGAL pages.',
+  ) do
+  options['report-legal'] = true
+end
+
+parser.on(
+  '--report-news',
+  'Report broken links on NEWS pages.',
+  ) do
+  options['report-news'] = true
+end
+
+parser.separator('Developer Options')
+
+parser.on(
+  '--stash-only',
+  'Read Ruby documents and write new stash;',
+  '    do not create new report.'
+) do
+  options['stash-only'] = true
+end
+
+parser.on(
+  '--report-only',
+  'Read existing stash and write new report;',
+  '    do not read Ruby documents or write new stash.'
+) do
+  options['report-only'] = true
+end
+
+parser.on(
+  '--verbosity LEVEL',
+  'Set verbosity level to one of:',
+  '    quiet: Print no progress messages.',
+  '    minimal: (default) Print some progress messages',
+  '    debug: Print extensive progress messages.'
+) do |arg|
+  options['verbosity'] = arg
+end
+
+parser.on(
+  '--version',
+  'Print the version and exit.',
+) do
+  puts RubyLinkChecker::VERSION
+  exit
+end
+
+parser.parse!
 p options

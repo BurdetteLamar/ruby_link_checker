@@ -17,18 +17,11 @@ Usage: #{$0} [options]
     - Broken links in onsite pages (including both page not found and fragment not found).
     - Offsite pages found.
 
-  The Report
-
-  The report is an HTML file located in the directory
-  given by option --dirpath (default is './ruby_link_checker'),
-  and whose filename is given by option --report-filename (default is a timestamped name).
-
-  User Options
+  The report is an HTML file in directory ./ruby_link_checker,
+  whose filename is timestamp-based with extension .html.
 
   Option --verbosity controls the quantity of progress messages to be printed.
   The default value is 'minimal'; value 'quiet' suppresses progress messages.
-
-  Option --
 
   Options --report-news and --report-legal specify that broken links
   on NEWS and LEGAL pages are to be reported. By default, these are not reported,
@@ -42,21 +35,20 @@ Usage: #{$0} [options]
 
   Option --version causes the link checker to print its version, then exit.
 
-  Developer Options
-
   Some options may be of use in developing or debugging the link checker.
 
-  By default, reads the documentation pages and writes the report, also creating
-  a JSON "stash" file in the directory given by option --dirpath (as above),
-  and whose filename is given by option --stash-filename (default is a timestamped name).
-  
-  You can limit the result to one or the other -- report or stash -- via options:
+  After reading the documentation on the website,
+  the link checker writes a "stash" file that contains its findings,
+  and from which the report is created.
 
-  - Option --stash-only specifies that the documentation is to be read
-    and the stash file written; the report is not to be written.
-  - Option --report-only specifies that documentation is not to be read
-    and the stash file is not to be written;  the report is to be based
-    on the most recent stash file.
+  The stash file is a JSON file in directory ./ruby_link_checker,
+  whose filename is timestamp-based with extension .json.
+
+  Option --report-only specifies that the documentation on the website
+  is not to be re-read and that a new stash file is not to be written;
+  instead, the report is to be based on the most recent stash file.
+  This may be useful in developing or debugging the reporting code
+  (avoids repeating the long reading and stashing process).
 
   Option --verbosity may also be useful for development and debugging.
   Setting the verbosity value to 'debug' tells the link checker to print
@@ -65,50 +57,18 @@ Usage: #{$0} [options]
 EOF
 
 options = {
-  'dirpath' => nil,
-  'report-filename' => nil,
-  'stash-filename' => nil,
-  'stash-only' => false,
-  'report-only' => false,
-  'verbosity' => 'minimal',
   'report-github-lines' => false,
   'report-legal' => false,
   'report-news' => false,
+  'report-only' => false,
+  'verbosity' => 'minimal',
 }
-
-parser.separator('Basic Options')
-
-parser.on(
-  '--dirpath DIRPATH',
-  'Path to directory containing stashes and reports.',
-  '    The default is ./ruby_link_checker.'
-) do |arg|
-  options['dirpath'] = arg
-end
-
-parser.on(
-  '--stash-filename FILENAME',
-  'Name of JSON stash file.',
-  '    The default is a timestamped filename',
-  '    (e.g., 2026-02-04-Wed-18:47:24Z.json).'
-) do |arg|
-  options['stash-filename'] = arg
-end
-
-parser.on(
-  '--report-filename FILENAME',
-  'Name of HTML report file.',
-  '    The default is a timestamped filename',
-  '    (e.g., 2026-02-04-Wed-18:47:24Z.html)'
-) do |arg|
-  options['report-filename'] = arg
-end
 
 parser.on(
   '--report-github-lines',
   'Report line-number fragments on GitHub pages.',
   )  do |arg|
-  options['report-github-lines'] = arg
+  options['report-github-lines'] = true
 end
 
 parser.on(
@@ -125,20 +85,10 @@ parser.on(
   options['report-news'] = true
 end
 
-parser.separator('Developer Options')
-
-parser.on(
-  '--stash-only',
-  'Read Ruby documents and write new stash;',
-  '    do not create new report.'
-) do
-  options['stash-only'] = true
-end
-
 parser.on(
   '--report-only',
   'Read existing stash and write new report;',
-  '    do not read Ruby documents or write new stash.'
+  '    do not re-read Ruby documents or write new stash.'
 ) do
   options['report-only'] = true
 end

@@ -17,6 +17,13 @@ class RubyLinkChecker
 
   SchemeList = URI.scheme_list.keys.map {|scheme| scheme.downcase}
   SchemeRegexp = Regexp.new('^(' + SchemeList.join('|') + ')')
+  DEFAULT_OPTIONS = {
+    report_github_lines: false,
+    report_legal: false,
+    report_news: false,
+    report_only: false,
+    verbosity: 'minimal',
+  }
 
   # URL for documentation base page.
   BASE_URL = 'https://docs.ruby-lang.org/en/master'
@@ -24,7 +31,7 @@ class RubyLinkChecker
   attr_accessor :onsite_paths, :offsite_paths, :counts
 
   # Return a new RubyLinkChecker object.
-  def initialize(onsite_paths = {}, offsite_paths = {}, counts = {})
+  def initialize(onsite_paths = {}, offsite_paths = {}, counts = {}, options: {})
     self.onsite_paths = onsite_paths
     self.offsite_paths = offsite_paths
     if counts.empty?
@@ -34,17 +41,17 @@ class RubyLinkChecker
       }
     end
     self.counts = counts
-    @pending_paths = []
+    @options = DEFAULT_OPTIONS.merge(options)
   end
 
   def create_stash
     counts['gather_start_time'] = Time.new
-    # Seed pending with base url.
-    @pending_paths << ''
+    # Seed pending paths with base url.
+    pending_paths = ['']
     # Work on the pending pages.
-    until @pending_paths.empty?
+    until pending_paths.empty?
       # Take the next pending page; skip if already done.
-      path = @pending_paths.shift
+      path = pending_paths.shift
       next if onsite_paths[path]
       # New page.
       page = Page.new(path)
@@ -58,15 +65,15 @@ class RubyLinkChecker
       end
       # Pend any new paths.
       page.links.each do |link|
+        href = link.href
+        next if href.start_with?('#')
+        _path = href.sub(%r[^\./], '').sub(%r[/$], '')
+        _path, _ = _path.split('#')
         if RubyLinkChecker.onsite?(link.href)
           counts['onsite_links_found'] += 1
         else
           counts['offsite_links_found'] += 1
         end
-        href = link.href
-        next if href.start_with?('#')
-        _path = href.sub(%r[^\./], '').sub(%r[/$], '')
-        _path, _ = _path.split('#')
         dirname = link.dirname
         if RubyLinkChecker.onsite?(_path) && dirname != '.'
           _path = File.join(dirname, _path)
@@ -74,9 +81,9 @@ class RubyLinkChecker
         # Skip if done or pending.
         next if onsite_paths.include?(_path)
         next if offsite_paths.include?(_path)
-        next if @pending_paths.include?(_path)
+        next if pending_paths.include?(_path)
         # Pend it.
-        @pending_paths.push(_path)
+        pending_paths.push(_path)
       end
     end
     counts['gather_end_time'] = Time.new
@@ -93,8 +100,17 @@ class RubyLinkChecker
 
   def verify_links
     onsite_paths.each_pair do |path, page|
+      if page.path.match(/^NEWS/)
+        next unless @options[:news_links]
+      end
+      if page.path.match(/^LEGAL/)
+        next unless @options[:legal_links]
+      end
       page.links.each do |link|
         path, fragment = link.href.split('#')
+        if path && path.match('github.com')
+          next if fragment && fragment.match(/^L\d+/) && !@options[:report_github_lines]
+        end
         if path.nil? || path.empty?
           # Fragment only.
           if page.ids.include?(fragment)

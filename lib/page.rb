@@ -81,10 +81,6 @@ class Page
     gather_ids(body)
     # $stderr.puts "    Ids: #{ids.size} #{path}"
     return unless RubyLinkChecker.onsite?(path)
-    unless links.empty?
-      message = "Links already gathered for #{path}."
-      raise RuntimeError.new(message)
-    end
     gather_links(path, body)
     # $stderr.puts "    Links: #{links.size} #{path}"
   end

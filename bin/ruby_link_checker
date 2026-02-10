@@ -57,32 +57,32 @@ Usage: #{$0} [options]
 EOF
 
 options = {
-  'report-github-lines' => false,
-  'report-legal' => false,
-  'report-news' => false,
-  'report-only' => false,
-  'verbosity' => 'minimal',
+  github_lines_fragments: false,
+  legal_links: false,
+  news_links: false,
+  report_only: false,
+  verbosity: 'minimal',
 }
 
 parser.on(
-  '--report-github-lines',
+  '--github-lines-fragments',
   'Report line-number fragments on GitHub pages.',
   )  do |arg|
-  options['report-github-lines'] = true
+  options[:github_lines_fragments] = true
 end
 
 parser.on(
-  '--report-legal',
+  '--legal-links',
   'Report broken links on LEGAL pages.',
   ) do
-  options['report-legal'] = true
+  options[:legal_links] = true
 end
 
 parser.on(
-  '--report-news',
+  '--news-links',
   'Report broken links on NEWS pages.',
   ) do
-  options['report-news'] = true
+  options[:news_links] = true
 end
 
 parser.on(
@@ -90,7 +90,7 @@ parser.on(
   'Read existing stash and write new report;',
   '    do not re-read Ruby documents or write new stash.'
 ) do
-  options['report-only'] = true
+  options[:report_only] = true
 end
 
 parser.on(
@@ -100,7 +100,7 @@ parser.on(
   '    minimal: (default) Print some progress messages',
   '    debug: Print extensive progress messages.'
 ) do |arg|
-  options['verbosity'] = arg
+  options[:verbosity] = arg
 end
 
 parser.on(

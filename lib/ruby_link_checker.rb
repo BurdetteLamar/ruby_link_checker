@@ -2,6 +2,7 @@ require 'net/http'
 require 'rexml'
 require 'json'
 require 'json/add/time'
+require 'fileutils'
 
 require_relative 'page'
 require_relative 'link'
@@ -45,7 +46,9 @@ class RubyLinkChecker
   end
 
   def create_stash
-    counts['gather_start_time'] = Time.new
+    time = Time.now
+    timestamp = time.strftime(Report::TIME_FORMAT)
+    counts['gather_start_time'] = time
     # Seed pending paths with base url.
     pending_paths = ['']
     # Work on the pending pages.
@@ -86,16 +89,28 @@ class RubyLinkChecker
         pending_paths.push(_path)
       end
     end
-    counts['gather_end_time'] = Time.new
+    counts['gather_end_time'] = Time.now
     json = JSON.pretty_generate(self)
-    File.write('t.json', json)
+    dirpath = File.join('./ruby_link_checker', timestamp)
+    FileUtils.mkdir_p(dirpath)
+    filename = 'stash.json'
+    filepath = File.join(dirpath, filename)
+    File.write(filepath, json)
   end
 
   def create_report
-    json = File.read('t.json')
+    dirpath = './ruby_link_checker'
+    recent_dirname = Dir.new(dirpath).entries.last
+    json_filename = 'stash.json'
+    json_filepath = File.join(dirpath, recent_dirname, json_filename)
+    # puts json_filepath
+    json = File.read(json_filepath)
     checker = JSON.parse(json, create_additions: true)
     checker.verify_links
-    Report.new(checker)
+    html_filename = 'report.html'
+    html_filepath = File.join(dirpath, recent_dirname, html_filename)
+    # puts html_filepath
+    Report.new(checker, html_filepath)
   end
 
   def verify_links
@@ -185,6 +200,6 @@ end
 
 if $0 == __FILE__
   checker = RubyLinkChecker.new
-  checker.create_stash
+  # checker.create_stash
   checker.create_report
 end

@@ -4,7 +4,7 @@ class Report
 
   include REXML
 
-  TIME_FORMAT = '%Y-%m-%d-%a-%k:%M:%SZ'
+  TIME_FORMAT = '%Y-%m-%d-%a-%H.%M.%S%z'
 
   CSS_STYLES = <<EOT
 *        { font-family: sans-serif }
@@ -30,10 +30,7 @@ EOT
   }
 
   # Create the report for info gathered by the checker.
-  def initialize(checker)
-
-    @checker = checker
-
+  def initialize(checker, filepath)
     doc = REXML::Document.new('')
     html = doc.add_element(Element.new('html'))
 
@@ -45,11 +42,13 @@ EOT
 
     body = html.add_element(Element.new('body'))
     add_title(body)
-    add_summary(body)
-    add_onsite_paths(body)
-    add_offsite_paths(body)
+    add_summary(body, checker)
+    add_onsite_paths(body, checker)
+    add_offsite_paths(body, checker)
 
-    doc.write($stdout, 2)
+    f = File.open(filepath, 'w')
+    doc.write(f, 2)
+    f.close
 
   end
 
@@ -60,12 +59,14 @@ EOT
     h2.text = 'Generated: ' + Time.now.strftime(TIME_FORMAT)
   end
 
-  def add_summary(body)
+  def add_summary(body, checker)
     h2 = body.add_element(Element.new('h2'))
     h2.text = 'Summary'
-
     start_time, end_time, duration =
-      formatted_times(@checker.counts['gather_start_time'], @checker.counts['gather_end_time'])
+      formatted_times(
+        checker.counts['gather_start_time'],
+        checker.counts['gather_end_time']
+      )
     data = [
       {'Start Time' => :label, start_time => :info_text},
       {'End Time' => :label, end_time => :info_text},
@@ -76,7 +77,7 @@ EOT
     onsite_links = 0
     offsite_links = 0
     broken_links = 0
-    @checker.onsite_paths.each_pair do |path, page|
+    checker.onsite_paths.each_pair do |path, page|
       page.links.each do |link|
         if RubyLinkChecker.onsite?(link.href)
           onsite_links += 1
@@ -87,8 +88,8 @@ EOT
       end
     end
     data = [
-      {'Onsite Pages' => :label, @checker.onsite_paths.size => :info_count},
-      {'Offsite Pages' => :label, @checker.offsite_paths.size => :info_count},
+      {'Onsite Pages' => :label, checker.onsite_paths.size => :info_count},
+      {'Offsite Pages' => :label, checker.offsite_paths.size => :info_count},
       {'Onsite Links' => :label, onsite_links => :info_count},
       {'Offsite Links' => :label, offsite_links => :info_count},
       {'Broken Links' => :label, broken_links => :bad_count},
@@ -96,9 +97,9 @@ EOT
     table2(body, data, 'summary', 'Pages and Links')
   end
 
-  def add_onsite_paths(body)
+  def add_onsite_paths(body, checker)
     h2 = body.add_element(Element.new('h2'))
-    h2.text = "Onsite Pages (#{@checker.onsite_paths.size})"
+    h2.text = "Onsite Pages (#{checker.onsite_paths.size})"
 
     table = body.add_element('table')
     headers = ['Path', 'Ids', 'Onsite Links', 'Offsite Links', 'Broken Links']
@@ -108,8 +109,8 @@ EOT
       th.text = header
       th.add_attribute('class', CSS_CLASSES[:info_text])
     end
-    @checker.onsite_paths.keys.sort.each_with_index do |path, page_id|
-      page = @checker.onsite_paths[path]
+    checker.onsite_paths.keys.sort.each_with_index do |path, page_id|
+      page = checker.onsite_paths[path]
       if path.empty?
         path = RubyLinkChecker::BASE_URL
       end
@@ -146,10 +147,10 @@ EOT
         page.links.each do |link|
           next unless link.status == :broken
           path, fragment = link.href.split('#')
-          if @checker.onsite_paths[path] || @checker.offsite_paths[path]
+          if checker.onsite_paths[path] || checker.offsite_paths[path]
             error = 'Fragment not found'
             path_status = :good_text
-            fragment_status =  @checker.offsite_paths[path] ? :iffy_text : :bad_text
+            fragment_status =  checker.offsite_paths[path] ? :iffy_text : :bad_text
           else
             error = 'Page Not Found'
             path_status = :bad_text
@@ -179,12 +180,12 @@ EOT
     end
   end
 
-  def add_offsite_paths(body)
+  def add_offsite_paths(body, checker)
     h2 = body.add_element(Element.new('h2'))
-    h2.text = "Offsite Pages (#{@checker.offsite_paths.size})"
+    h2.text = "Offsite Pages (#{checker.offsite_paths.size})"
 
     paths_by_url = {}
-    @checker.offsite_paths.each_pair do |path, page|
+    checker.offsite_paths.each_pair do |path, page|
       next unless page.found
       uri = URI(path)
       if uri.scheme.nil?

@@ -22,7 +22,6 @@ class RubyLinkChecker
     report_github_lines: false,
     report_legal: false,
     report_news: false,
-    report_only: false,
     verbosity: 'minimal',
   }
 

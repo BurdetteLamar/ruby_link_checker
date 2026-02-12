@@ -9,19 +9,21 @@ parser.banner = <<-EOF
 
 Usage: #{$0} [options]
 
-  - Checks links in the Ruby HTML documentation found at #{RubyLinkChecker::BASE_URL}.
+  - Reads Ruby HTML documentation found at #{RubyLinkChecker::BASE_URL}.
 
-  - Writes an HTML file that reports:
+  - Writes a JSON "stash" file containing its findings.
+  - Writes an HTML report file that lists:
 
     - Onsite pages found.
-    - Broken links in onsite pages (including both page not found and fragment not found).
+    - Broken links in onsite pages (including both pages not found and fragments not found).
     - Offsite pages found.
 
-  The report is an HTML file in directory ./ruby_link_checker,
-  whose filename is timestamp-based with extension .html.
+  The link checker creates a new subdirectory in directory ./ruby_link_checker
+  whose name is timestamp-based (e/g/. 2026-02-11-Wed-21.29.00+0000),
+  and writes output files stash.json and report.html into that subdirectory.
 
   Option --verbosity controls the quantity of progress messages to be printed.
-  The default value is 'minimal'; value 'quiet' suppresses progress messages.
+  The default value is 'moderate'; value 'quiet' suppresses progress messages.
 
   Options --report-news and --report-legal specify that broken links
   on NEWS and LEGAL pages are to be reported. By default, these are not reported,
@@ -34,15 +36,6 @@ Usage: #{$0} [options]
   Option --help causes the link checker to print its help text, then exit.
 
   Option --version causes the link checker to print its version, then exit.
-
-  Some options may be of use in developing or debugging the link checker.
-
-  After reading the documentation on the website,
-  the link checker writes a "stash" file that contains its findings,
-  and from which the report is created.
-
-  The stash file is a JSON file in directory ./ruby_link_checker,
-  whose filename is timestamp-based with extension .json.
 
   Option --report-only specifies that the documentation on the website
   is not to be re-read and that a new stash file is not to be written;
@@ -87,7 +80,7 @@ end
 
 parser.on(
   '--report-only',
-  'Read existing stash and write new report;',
+  'Read recent stash and write new report;',
   '    do not re-read Ruby documents or write new stash.'
 ) do
   options[:report_only] = true
@@ -112,4 +105,8 @@ parser.on(
 end
 
 parser.parse!
-p options
+report_only = options.delete(:report_only)
+checker = RubyLinkChecker.new(options: options)
+checker.create_stash unless report_only
+checker.create_report
+

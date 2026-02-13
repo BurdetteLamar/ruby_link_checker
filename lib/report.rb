@@ -79,6 +79,10 @@ EOT
     broken_links = 0
     checker.onsite_paths.each_pair do |path, page|
       page.links.each do |link|
+        path, fragment = link.href.split('#')
+        if path && path.match('github.com')
+          next if fragment && fragment.match(/^L\d+/) && !checker.options[:report_github_lines]
+        end
         if RubyLinkChecker.onsite?(link.href)
           onsite_links += 1
         else
@@ -119,12 +123,21 @@ EOT
       broken_links = onsite_links.select {|link| link.status == :broken }
       broken_links += offsite_links.select {|link| link.status == :broken }
       tr = table.add_element('tr')
-      status = broken_links.empty? ? 'good' : 'bad'
+      status = case
+               when broken_links.empty?
+                 'good'
+               when page.path.match(/^NEWS/)
+                 checker.options[:report_news] ? 'bad' : 'good'
+               when page.path.match(/^LEGAL/)
+                 checker.options[:report_legal] ? 'bad' : 'good'
+               else
+                 'bad'
+      end
       tr.add_attribute('class', status)
       [path, page.ids.size, onsite_links.size, offsite_links.size, broken_links.size].each_with_index do |value, i|
         td = tr.add_element('td')
         if i == 0
-          if broken_links.empty?
+          if status == 'good'
             td.text = value
           else
             a = td.add_element('a')

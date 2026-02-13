@@ -11,6 +11,17 @@ require_relative 'report'
 
 # A class to check links on pages in the official Ruby documentation
 # at https://docs.ruby-lang.org/en/master.
+#
+# TODO:
+# - Do all counts in Report (not in RubyLinkChecker or Page).
+# - Report:
+#   - Mark page as yellow if its breaks are all fragments, red if any page breaks.
+#   - Mark page as blue if its links are not checked (LEGAL, NEWS).
+#   - Mark fragment as blue if it is not checked (github lines).
+# - RubyLinkChecker:
+#   - On-site page: gather ids only if fragments cited.
+#   - Off-site page: fetch and gather ids only if fragments cited.
+#   - Handle links in subclasses.
 
 class RubyLinkChecker
 
@@ -28,7 +39,7 @@ class RubyLinkChecker
   # URL for documentation base page.
   BASE_URL = 'https://docs.ruby-lang.org/en/master'
 
-  attr_accessor :onsite_paths, :offsite_paths, :counts
+  attr_accessor :onsite_paths, :offsite_paths, :counts, :options
 
   # Return a new RubyLinkChecker object.
   def initialize(onsite_paths = {}, offsite_paths = {}, counts = {}, options: {})
@@ -41,7 +52,7 @@ class RubyLinkChecker
       }
     end
     self.counts = counts
-    @options = DEFAULT_OPTIONS.merge(options)
+    self.options = DEFAULT_OPTIONS.merge(options)
   end
 
   def create_stash
@@ -114,17 +125,8 @@ class RubyLinkChecker
 
   def verify_links
     onsite_paths.each_pair do |path, page|
-      if page.path.match(/^NEWS/)
-        next unless @options[:news_links]
-      end
-      if page.path.match(/^LEGAL/)
-        next unless @options[:legal_links]
-      end
       page.links.each do |link|
         path, fragment = link.href.split('#')
-        if path && path.match('github.com')
-          next if fragment && fragment.match(/^L\d+/) && !@options[:report_github_lines]
-        end
         if path.nil? || path.empty?
           # Fragment only.
           if page.ids.include?(fragment)

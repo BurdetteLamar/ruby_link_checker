@@ -13,8 +13,6 @@ require_relative 'report'
 # at https://docs.ruby-lang.org/en/master.
 #
 # TODO:
-# - Do all counts in Report (not in RubyLinkChecker or Page).
-#   Also means that hash counts should be reduced and renamed as times.
 # - Fix verbosity: stdout, levels.
 # - Report:
 #   - Mark page as yellow if its breaks are all fragments, red if any page breaks.
@@ -69,7 +67,7 @@ class RubyLinkChecker
       next if onsite_paths[path]
       # New page.
       page = Page.new(path)
-      $stderr.puts "#{page.type} #{path}"
+      progress("%4.4d queued:  Dequeueing %s" % [pending_paths.size, path])
       page.check_page
       if page.onsite?
         next unless page.found
@@ -92,6 +90,7 @@ class RubyLinkChecker
         next if offsite_paths.include?(_path)
         next if pending_paths.include?(_path)
         # Pend it.
+        progress("%4.4d queued:  Queueing %s" % [pending_paths.size, _path])
         pending_paths.push(_path)
       end
     end
@@ -182,6 +181,14 @@ class RubyLinkChecker
     values
   end
 
+  def progress(message)
+    puts message unless options[:verbosity] == 'quiet'
+  end
+
+  def debug(message)
+    puts message if options[:verbosity] == 'debug'
+  end
+
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
@@ -193,10 +200,4 @@ class RubyLinkChecker
     new(*object['a'])
   end
 
-end
-
-if $0 == __FILE__
-  checker = RubyLinkChecker.new
-  # checker.create_stash
-  checker.create_report
 end

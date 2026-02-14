@@ -47,14 +47,11 @@ class Page
           else
             path
           end
-    # $stderr.puts(url)
     # Parse the url.
     begin
       uri = URI(url)
     rescue => x
       message = "URI(url) failed for #{url}."
-      $stderr.puts path
-      $stderr.puts message
       exception = URIParseException.new(message, 'url', url, x)
       exceptions << exception
     end
@@ -64,25 +61,17 @@ class Page
       self.found = true
     rescue => x
       message = "Net::HTTP.get_response(uri) failed for #{uri}."
-      $stderr.puts path
-      $stderr.puts message
       exception = HTTPResponseException.new(message, 'uri', uri, x)
       exceptions << exception
     end
-    # Don't gather links if bad code, or not html, or not onsite.
+    # Don't gather links if bad code, or not html, or offsite.
     return if code_bad?(response)
     return unless content_type_html?(response)
     # Get the HTML body.
     body = response.body
-    unless ids.empty?
-      message = "Ids already gathered for #{path}."
-      raise RuntimeError.new(message)
-    end
     gather_ids(body)
-    # $stderr.puts "    Ids: #{ids.size} #{path}"
     return unless RubyLinkChecker.onsite?(path)
     gather_links(path, body)
-    # $stderr.puts "    Links: #{links.size} #{path}"
   end
 
   # Returns whether the code is bad (zero or >= 400).
@@ -127,7 +116,6 @@ class Page
           text = doc.root.text
           link = Link.new(page_path, lineno, href, text)
           links.push(link)
-          # $stderr.puts "    Href: #{RubyLinkChecker.onsite?(href)} #{href}"
         rescue REXML::ParseException => x
           message = "REXML::Document.new(anchor) failed for #{anchor}."
           exception = AnchorParseException.new(message, 'anchor', anchor, x)

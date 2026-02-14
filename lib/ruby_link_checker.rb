@@ -14,14 +14,21 @@ require_relative 'report'
 #
 # TODO:
 # - Do all counts in Report (not in RubyLinkChecker or Page).
+#   Also means that hash counts should be reduced and renamed as times.
+# - Fix verbosity: stdout, levels.
 # - Report:
 #   - Mark page as yellow if its breaks are all fragments, red if any page breaks.
-#   - Mark page as blue if its links are not checked (LEGAL, NEWS).
-#   - Mark fragment as blue if it is not checked (github lines).
+#   - Mark page as info if its links are not checked (LEGAL, NEWS).
+#   - Mark fragment as info if it is not checked (github lines).
+#   - Report ignored links in pages (LEGAL, NEWS).
+#   - Report ignored fragments (github lines).
+#   - Report URL parsing exceptions.
+#   - Report REXML parsing exceptions.
 # - RubyLinkChecker:
 #   - On-site page: gather ids only if fragments cited.
 #   - Off-site page: fetch and gather ids only if fragments cited.
-#   - Handle links in subclasses.
+#   - Correctly handle links in subclasses.
+#   - Parse images as special cases?
 
 class RubyLinkChecker
 
@@ -39,26 +46,20 @@ class RubyLinkChecker
   # URL for documentation base page.
   BASE_URL = 'https://docs.ruby-lang.org/en/master'
 
-  attr_accessor :onsite_paths, :offsite_paths, :counts, :options
+  attr_accessor :onsite_paths, :offsite_paths, :times, :options
 
   # Return a new RubyLinkChecker object.
-  def initialize(onsite_paths = {}, offsite_paths = {}, counts = {}, options: {})
+  def initialize(onsite_paths = {}, offsite_paths = {}, times = {}, options: {})
     self.onsite_paths = onsite_paths
     self.offsite_paths = offsite_paths
-    if counts.empty?
-      counts = {
-        'onsite_links_found' => 0,
-        'offsite_links_found' => 0,
-      }
-    end
-    self.counts = counts
+    self.times = times
     self.options = DEFAULT_OPTIONS.merge(options)
   end
 
   def create_stash
     time = Time.now
     timestamp = time.strftime(Report::TIME_FORMAT)
-    counts['gather_start_time'] = time
+    times['start'] = time
     # Seed pending paths with base url.
     pending_paths = ['']
     # Work on the pending pages.
@@ -82,11 +83,6 @@ class RubyLinkChecker
         next if href.start_with?('#')
         _path = href.sub(%r[^\./], '').sub(%r[/$], '')
         _path, _ = _path.split('#')
-        if RubyLinkChecker.onsite?(link.href)
-          counts['onsite_links_found'] += 1
-        else
-          counts['offsite_links_found'] += 1
-        end
         dirname = link.dirname
         if RubyLinkChecker.onsite?(_path) && dirname != '.'
           _path = File.join(dirname, _path)
@@ -99,7 +95,7 @@ class RubyLinkChecker
         pending_paths.push(_path)
       end
     end
-    counts['gather_end_time'] = Time.now
+    times['end'] = Time.now
     json = JSON.pretty_generate(self)
     dirpath = File.join('./ruby_link_checker', timestamp)
     FileUtils.mkdir_p(dirpath)
@@ -189,7 +185,7 @@ class RubyLinkChecker
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
-      'a'             => [ onsite_paths, offsite_paths, counts ],
+      'a'             => [ onsite_paths, offsite_paths, times ],
     }.to_json(*args)
   end
 

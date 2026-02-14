@@ -63,10 +63,7 @@ EOT
     h2 = body.add_element(Element.new('h2'))
     h2.text = 'Summary'
     start_time, end_time, duration =
-      formatted_times(
-        checker.counts['gather_start_time'],
-        checker.counts['gather_end_time']
-      )
+      formatted_times(checker.times)
     data = [
       {'Start Time' => :label, start_time => :info_text},
       {'End Time' => :label, end_time => :info_text},
@@ -261,7 +258,9 @@ EOT
     end
   end
 
-  def formatted_times(start_time, end_time)
+  def formatted_times(times)
+    start_time = times['start']
+    end_time = times['end']
     minutes, seconds = (end_time - start_time).divmod(60)
     elapsed = "%d:%02d" % [minutes, seconds]
     [start_time.strftime(TIME_FORMAT), end_time.strftime(TIME_FORMAT),  elapsed]

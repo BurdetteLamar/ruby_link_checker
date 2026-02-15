@@ -9,8 +9,10 @@ class Report
   CSS_STYLES = <<EOT
 *        { font-family: sans-serif }
 .data    { font-family: courier }
+
 .text    { text-align: left }
-.count   { text-align: right }
+.number  { text-align: right }
+
 .good    { color: rgb(  0,  97,   0); background-color: rgb(198, 239, 206) } /* Greenish */
 .iffy    { color: rgb(156, 101,   0); background-color: rgb(255, 235, 156) } /* Yellowish */
 .bad     { color: rgb(156,   0,   6); background-color: rgb(255, 199, 206) } /* Reddish */
@@ -18,15 +20,17 @@ class Report
 EOT
 
   CSS_CLASSES = {
-    label: 'text info',
-    good_text: 'data text good',
-    iffy_text: 'data text iffy',
-    bad_text: 'data text bad',
-    info_text: 'data text info',
-    good_count: 'data count good',
-    iffy_count: 'data count iffy',
-    bad_count: 'data count bad',
-    info_count: 'data count info',
+    label:      'text info',
+
+    good_text:  'data text good',
+    iffy_text:  'data text iffy',
+    bad_text:   'data text bad',
+    info_text:  'data text info',
+
+    good_count: 'data number good',
+    iffy_count: 'data number iffy',
+    bad_count:  'data number bad',
+    info_count: 'data number info',
   }
 
   # Create the report for info gathered by the checker.
@@ -120,26 +124,28 @@ EOT
       broken_links = onsite_links.select {|link| link.status == :broken }
       broken_links += offsite_links.select {|link| link.status == :broken }
       tr = table.add_element('tr')
-      status = case
-               when broken_links.empty?
-                 'good'
-               when page.path.match(/^NEWS/)
-                 checker.options[:report_news] ? 'bad' : 'good'
-               when page.path.match(/^LEGAL/)
-                 checker.options[:report_legal] ? 'bad' : 'good'
-               else
-                 'bad'
-      end
-      tr.add_attribute('class', status)
+      row_class = case
+                  when page.path.match(/^NEWS/)
+                    p ['NEWS', checker.options[:report_news]]
+                    checker.options[:report_news] ? :bad_text : :info_text
+                  when page.path.match(/^LEGAL/)
+                    p ['LEGAL', checker.options[:report_legal]]
+                    checker.options[:report_legal] ? :bad_text : :info_text
+                  when broken_links.empty?
+                    :good_text
+                  else
+                    :bad_text
+                  end
+      tr.add_attribute('class', CSS_CLASSES[row_class])
       [path, page.ids.size, onsite_links.size, offsite_links.size, broken_links.size].each_with_index do |value, i|
         td = tr.add_element('td')
         if i == 0
-          if status == 'good'
-            td.text = value
-          else
+          if row_class == :bad_text
             a = td.add_element('a')
             a.add_attribute('href', "##{page_id}")
             a.text = value
+          else
+            td.text = value
           end
         else
           td.text = value

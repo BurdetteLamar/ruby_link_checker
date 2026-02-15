@@ -15,8 +15,8 @@ require_relative 'report'
 # TODO:
 # - Fix verbosity: stdout, levels.
 # - Report:
+#   - Open report in browser.
 #   - Mark page as yellow if its breaks are all fragments, red if any page breaks.
-#   - Mark page as info if its links are not checked (NEWS).
 #   - Mark fragment as info if it is not checked (github lines).
 #   - Report ignored links in pages (NEWS).
 #   - Report ignored fragments (github lines).
@@ -105,16 +105,15 @@ class RubyLinkChecker
   def create_report
     dirpath = './ruby_link_checker'
     recent_dirname = Dir.new(dirpath).entries.last
-    json_filename = 'stash.json'
-    json_filepath = File.join(dirpath, recent_dirname, json_filename)
-    # puts json_filepath
-    json = File.read(json_filepath)
+    stash_filename = 'stash.json'
+    stash_filepath = File.join(dirpath, recent_dirname, stash_filename)
+    json = File.read(stash_filepath)
     checker = JSON.parse(json, create_additions: true)
     checker.verify_links
-    html_filename = 'report.html'
-    html_filepath = File.join(dirpath, recent_dirname, html_filename)
-    # puts html_filepath
-    Report.new(checker, html_filepath)
+    report_filename = 'report.html'
+    report_filepath = File.join(dirpath, recent_dirname, report_filename)
+    Report.new(checker, report_filepath)
+    report_filepath
   end
 
   def verify_links

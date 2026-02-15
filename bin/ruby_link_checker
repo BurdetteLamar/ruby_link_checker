@@ -43,6 +43,9 @@ Usage: #{$0} [options]
   This may be useful in developing or debugging the reporting code
   (avoids repeating the long reading and stashing process).
 
+  Option --open-report specifies that the generated HTML report
+  is to be opened in a web browser.
+
   Option --verbosity may also be useful for development and debugging.
   Setting the verbosity value to 'debug' tells the link checker to print
   all its progress messages.
@@ -53,6 +56,7 @@ options = {
   github_lines_fragments: false,
   news_links: false,
   report_only: false,
+  open_report: false,
   verbosity: 'minimal',
 }
 
@@ -68,6 +72,13 @@ parser.on(
   'Report broken links on NEWS pages.',
   ) do
   options[:news_links] = true
+end
+
+parser.on(
+  '--open-report',
+  'Open the HTML report in a browser.'
+) do
+  options[:open_report] = true
 end
 
 parser.on(
@@ -98,7 +109,11 @@ end
 
 parser.parse!
 report_only = options.delete(:report_only)
+open_report = options.delete(:open_report)
 checker = RubyLinkChecker.new(options: options)
 checker.create_stash unless report_only
-checker.create_report
-
+report_filepath = checker.create_report
+if open_report
+  command = "start #{report_filepath}"
+  system(command)
+end

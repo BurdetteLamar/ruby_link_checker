@@ -53,6 +53,7 @@ EOT
     f = File.open(filepath, 'w')
     doc.write(f, 2)
     f.close
+    puts "Report file: #{filepath}"
 
   end
 

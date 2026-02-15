@@ -126,11 +126,7 @@ EOT
       tr = table.add_element('tr')
       row_class = case
                   when page.path.match(/^NEWS/)
-                    p ['NEWS', checker.options[:report_news]]
                     checker.options[:report_news] ? :bad_text : :info_text
-                  when page.path.match(/^LEGAL/)
-                    p ['LEGAL', checker.options[:report_legal]]
-                    checker.options[:report_legal] ? :bad_text : :info_text
                   when broken_links.empty?
                     :good_text
                   else

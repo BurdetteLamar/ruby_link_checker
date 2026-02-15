@@ -25,9 +25,9 @@ Usage: #{$0} [options]
   Option --verbosity controls the quantity of progress messages to be printed.
   The default value is 'moderate'; value 'quiet' suppresses progress messages.
 
-  Options --report-news and --report-legal specify that broken links
-  on NEWS and LEGAL pages are to be reported. By default, these are not reported,
-  because the Ruby core team has determined that the underlying NEWS and LEGAL
+  Option --report-news specifies that broken links
+  on NEWS pages are to be reported. By default, these are not reported,
+  because the Ruby core team has determined that the underlying NEWS
   pages are historical in nature and should not be modified.
 
   Option --report-github-lines specifies that a line-number fragment on a GitHub page
@@ -51,7 +51,6 @@ EOF
 
 options = {
   github_lines_fragments: false,
-  legal_links: false,
   news_links: false,
   report_only: false,
   verbosity: 'minimal',
@@ -62,13 +61,6 @@ parser.on(
   'Report line-number fragments on GitHub pages.',
   )  do |arg|
   options[:github_lines_fragments] = true
-end
-
-parser.on(
-  '--legal-links',
-  'Report broken links on LEGAL pages.',
-  ) do
-  options[:legal_links] = true
 end
 
 parser.on(

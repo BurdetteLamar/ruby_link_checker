@@ -16,9 +16,9 @@ require_relative 'report'
 # - Fix verbosity: stdout, levels.
 # - Report:
 #   - Mark page as yellow if its breaks are all fragments, red if any page breaks.
-#   - Mark page as info if its links are not checked (LEGAL, NEWS).
+#   - Mark page as info if its links are not checked (NEWS).
 #   - Mark fragment as info if it is not checked (github lines).
-#   - Report ignored links in pages (LEGAL, NEWS).
+#   - Report ignored links in pages (NEWS).
 #   - Report ignored fragments (github lines).
 #   - Report URL parsing exceptions.
 #   - Report REXML parsing exceptions.
@@ -36,7 +36,6 @@ class RubyLinkChecker
   SchemeRegexp = Regexp.new('^(' + SchemeList.join('|') + ')')
   DEFAULT_OPTIONS = {
     report_github_lines: false,
-    report_legal: false,
     report_news: false,
     verbosity: 'minimal',
   }

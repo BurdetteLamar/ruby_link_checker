@@ -140,11 +140,25 @@ class Page
 
   def gather_ids(body)
     body.lines.each do |line|
-      values = RubyLinkChecker.get_attribute_values(line, %w[ id name ])
+      values = get_attribute_values(line, %w[ id name ])
       values.each do |value|
         ids.push(value)
       end
     end
+  end
+
+  def get_attribute_values(s, attribute_names)
+    re = Regexp.new('(' + attribute_names.join('|') + ')="')
+    values = []
+    scanner = StringScanner.new(s)
+    while (s0 = scanner.check_until(re))
+      scanner.pos += s0.length
+      if (s1 = scanner.check_until(/"/))
+        value = s1[0..-2]
+        values.push(value)
+      end
+    end
+    values
   end
 
   def to_json(*args)

@@ -165,20 +165,6 @@ class RubyLinkChecker
     path.match(/^[a-zA-Z]/) ? true : false
   end
 
-  def self.get_attribute_values(s, attribute_names)
-    re = Regexp.new('(' + attribute_names.join('|') + ')="')
-    values = []
-    scanner = StringScanner.new(s)
-    while (s0 = scanner.check_until(re))
-      scanner.pos += s0.length
-      if (s1 = scanner.check_until(/"/))
-        value = s1[0..-2]
-        values.push(value)
-      end
-    end
-    values
-  end
-
   def progress(message)
     puts message unless options[:verbosity] == 'quiet'
   end

@@ -150,6 +150,7 @@ EOT
         end
       end
       next if broken_links.empty? && page.exceptions.empty?
+      next if path.match(/^NEWS/) && !checker.options[:report_news]
       h3 = body.add_element('h3')
       h3.add_attribute('id', page_id)
       a = Element.new('a')

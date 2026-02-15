@@ -81,10 +81,6 @@ EOT
     broken_links = 0
     checker.onsite_paths.each_pair do |path, page|
       page.links.each do |link|
-        path, fragment = link.href.split('#')
-        if path && path.match('github.com')
-          next if fragment && fragment.match(/^L\d+/) && !checker.options[:report_github_lines]
-        end
         if RubyLinkChecker.onsite?(link.href)
           onsite_links += 1
         else
@@ -161,6 +157,10 @@ EOT
         page.links.each do |link|
           next unless link.status == :broken
           path, fragment = link.href.split('#')
+          if path && path.match('/github.com/') && path.match('/blob/')
+            next if fragment&.match(/^L\d+/) &&
+                    !checker.options[:report_github_lines]
+          end
           if checker.onsite_paths[path] || checker.offsite_paths[path]
             error = 'Fragment not found'
             path_status = :good_text

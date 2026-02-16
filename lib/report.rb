@@ -76,25 +76,34 @@ EOT
     ]
     table2(body, data, 'gathering', 'Gathered Time')
 
-    onsite_links = 0
-    offsite_links = 0
-    broken_links = 0
+    onsite_link_count = 0
+    offsite_link_count = 0
+    broken_path_count = 0
+    broken_fragment_count = 0
     checker.onsite_paths.each_pair do |path, page|
       page.links.each do |link|
         if RubyLinkChecker.onsite?(link.href)
-          onsite_links += 1
+          onsite_link_count += 1
         else
-          offsite_links += 1
+          offsite_link_count += 1
         end
-        broken_links += 1 unless link.status == :valid
+        case link.status
+        when :path_not_found
+          broken_path_count += 1
+        when :fragment_not_found
+          broken_fragment_count += 1
+        else
+          # Okay.
+        end
       end
     end
     data = [
       {'Onsite Pages' => :label, checker.onsite_paths.size => :info_count},
       {'Offsite Pages' => :label, checker.offsite_paths.size => :info_count},
-      {'Onsite Links' => :label, onsite_links => :info_count},
-      {'Offsite Links' => :label, offsite_links => :info_count},
-      {'Broken Links' => :label, broken_links => :bad_count},
+      {'Onsite Links' => :label, onsite_link_count => :info_count},
+      {'Offsite Links' => :label, offsite_link_count => :info_count},
+      {'Paths Not Found' => :label, broken_path_count => :bad_count},
+      {'Fragments Not Found' => :label, broken_fragment_count => :iffy_count},
     ]
     table2(body, data, 'summary', 'Pages and Links')
   end
@@ -195,7 +204,7 @@ EOT
             path_status = :good_text
             fragment_status =  checker.offsite_paths[path] ? :iffy_text : :bad_text
           else
-            error = 'Page Not Found'
+            error = 'Path Not Found'
             path_status = :bad_text
             fragment_status = :info_text
           end

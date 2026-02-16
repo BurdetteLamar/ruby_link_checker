@@ -105,7 +105,10 @@ EOT
 
     table = body.add_element('table')
     table.add_attribute('width', '50%')
-    headers = ['Path', 'Ids', "Onsite Links", 'Offsite Links', 'Page Not Found']
+    headers = [
+      'Path', 'Ids', "Onsite Links",
+      'Offsite Links', 'Paths Not Found', 'Fragments Not Found',
+    ]
     tr = table.add_element('tr')
     headers.each do |header|
       th = tr.add_element('th')
@@ -119,33 +122,58 @@ EOT
       end
       onsite_links = page.links.select {|link| RubyLinkChecker.onsite?(link.href) }
       offsite_links = page.links - onsite_links
-      broken_links = onsite_links.select {|link| link.status != :valid }
-      broken_links += offsite_links.select {|link| link.status != :valid }
+      all_links = onsite_links + offsite_links
+      page_not_found_links = all_links.select {|link| link.status == :path_not_found}
+      fragment_not_found_links = all_links.select {|link| link.status == :fragment_not_found}
+      broken_links = page_not_found_links + fragment_not_found_links
       tr = table.add_element('tr')
-      row_class = case
-                  when page.path.match(/^NEWS/)
-                    checker.options[:report_news] ? :bad_text : :info_text
-                  when broken_links.empty?
-                    :good_text
-                  else
-                    :bad_text
-                  end
+      # row_class = case
+      #             when page.path.match(/^NEWS/)
+      #               checker.options[:report_news] ? :bad_text : :info_text
+      #             when broken_links.empty?
+      #               :good_text
+      #             else
+      #               :bad_text
+      #             end
+      row_class = :info_text
       tr.add_attribute('class', CSS_CLASSES[row_class])
-      [path, page.ids.size, onsite_links.size, offsite_links.size, broken_links.size].each_with_index do |value, i|
+      values =  [
+        path, page.ids.size, onsite_links.size, offsite_links.size,
+        page_not_found_links.size, fragment_not_found_links.size
+      ]
+      breaks_found = page_not_found_links + fragment_not_found_links
+      values.each_with_index do |value, i|
         td = tr.add_element('td')
         if i == 0
-          if row_class == :bad_text
+          if breaks_found.empty?
+            td.text = value
+          else
             a = td.add_element('a')
             a.add_attribute('href', "##{page_id}")
             a.text = value
-          else
-            td.text = value
           end
         else
           td.text = value
           td.add_attribute('align', 'right')
         end
+        if i == 4
+          if path.match(/^NEWS/) && !checker.options[:report_news]
+            cell_class = :info_count
+          else
+            cell_class = page_not_found_links.empty? ? :good_count : :bad_count
+          end
+          td.add_attribute('class', CSS_CLASSES[cell_class])
+        end
+        if i == 5
+          if path.match(/^NEWS/) && !checker.options[:report_news]
+            cell_class = :info_count
+          else
+            cell_class = fragment_not_found_links.empty? ? :good_count : :iffy_count
+          end
+          td.add_attribute('class', CSS_CLASSES[cell_class])
+        end
       end
+      broken_links = page_not_found_links + fragment_not_found_links
       next if broken_links.empty? && page.exceptions.empty?
       next if path.match(/^NEWS/) && !checker.options[:report_news]
       h3 = body.add_element('h3')

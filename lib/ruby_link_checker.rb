@@ -125,7 +125,7 @@ class RubyLinkChecker
           if page.ids.include?(fragment)
             link.status = :valid
           else
-            link.status = :broken
+            link.status = :fragment_not_found
           end
         elsif fragment.nil?
           # Path only.
@@ -134,17 +134,17 @@ class RubyLinkChecker
              offsite_paths.keys.include?(href)
             link.status = :valid
           else
-            link.status = :broken
+            link.status = :path_not_found
           end
         else
           # Both path and fragment.
           target_page = target_page(path)
           if target_page.nil?
-            link.status = :broken
+            link.status = :path_not_found
           elsif target_page.ids.include?(fragment)
             link.status = :valid
           else
-            link.status = :broken
+            link.status = :fragment_not_found
           end
         end
       end

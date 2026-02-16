@@ -86,7 +86,7 @@ EOT
         else
           offsite_links += 1
         end
-        broken_links += 1 if link.status == :broken
+        broken_links += 1 unless link.status == :valid
       end
     end
     data = [
@@ -104,7 +104,8 @@ EOT
     h2.text = "Onsite Pages (#{checker.onsite_paths.size})"
 
     table = body.add_element('table')
-    headers = ['Path', 'Ids', 'Onsite Links', 'Offsite Links', 'Broken Links']
+    table.add_attribute('width', '50%')
+    headers = ['Path', 'Ids', "Onsite Links", 'Offsite Links', 'Page Not Found']
     tr = table.add_element('tr')
     headers.each do |header|
       th = tr.add_element('th')
@@ -118,8 +119,8 @@ EOT
       end
       onsite_links = page.links.select {|link| RubyLinkChecker.onsite?(link.href) }
       offsite_links = page.links - onsite_links
-      broken_links = onsite_links.select {|link| link.status == :broken }
-      broken_links += offsite_links.select {|link| link.status == :broken }
+      broken_links = onsite_links.select {|link| link.status != :valid }
+      broken_links += offsite_links.select {|link| link.status != :valid }
       tr = table.add_element('tr')
       row_class = case
                   when page.path.match(/^NEWS/)
@@ -155,7 +156,7 @@ EOT
       h3.add_element(a)
       unless broken_links.empty?
         page.links.each do |link|
-          next unless link.status == :broken
+          next if link.status == :valid
           path, fragment = link.href.split('#')
           if path && path.match('/github.com/') && path.match('/blob/')
             next if fragment&.match(/^L\d+/) &&

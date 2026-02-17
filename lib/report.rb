@@ -136,14 +136,6 @@ EOT
       fragment_not_found_links = all_links.select {|link| link.status == :fragment_not_found}
       broken_links = page_not_found_links + fragment_not_found_links
       tr = table.add_element('tr')
-      # row_class = case
-      #             when page.path.match(/^NEWS/)
-      #               checker.options[:report_news] ? :bad_text : :info_text
-      #             when broken_links.empty?
-      #               :good_text
-      #             else
-      #               :bad_text
-      #             end
       row_class = :info_text
       tr.add_attribute('class', CSS_CLASSES[row_class])
       values =  [
@@ -154,7 +146,7 @@ EOT
       values.each_with_index do |value, i|
         td = tr.add_element('td')
         if i == 0
-          if breaks_found.empty?
+          if breaks_found.empty? || suppressible_news?(path, checker)
             td.text = value
           else
             a = td.add_element('a')
@@ -166,7 +158,7 @@ EOT
           td.add_attribute('align', 'right')
         end
         if i == 4
-          if path.match(/^NEWS/) && !checker.options[:report_news]
+          if suppressible_news?(path, checker)
             cell_class = :info_count
           else
             cell_class = page_not_found_links.empty? ? :good_count : :bad_count
@@ -174,7 +166,7 @@ EOT
           td.add_attribute('class', CSS_CLASSES[cell_class])
         end
         if i == 5
-          if path.match(/^NEWS/) && !checker.options[:report_news]
+          if suppressible_news?(path, checker)
             cell_class = :info_count
           else
             cell_class = fragment_not_found_links.empty? ? :good_count : :iffy_count
@@ -184,7 +176,7 @@ EOT
       end
       broken_links = page_not_found_links + fragment_not_found_links
       next if broken_links.empty? && page.exceptions.empty?
-      next if path.match(/^NEWS/) && !checker.options[:report_news]
+      next if suppressible_news?(path, checker)
       h3 = body.add_element('h3')
       h3.add_attribute('id', page_id)
       a = Element.new('a')
@@ -298,6 +290,10 @@ EOT
       end
       td.add_attribute('class', CSS_CLASSES[value_class])
     end
+  end
+
+  def suppressible_news?(path, checker)
+    path.match(/^NEWS/) && !checker.options[:report_news]
   end
 
   def formatted_times(times)

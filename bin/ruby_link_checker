@@ -25,12 +25,12 @@ Usage: #{$0} [options]
   Option --verbosity controls the quantity of progress messages to be printed.
   The default value is 'moderate'; value 'quiet' suppresses progress messages.
 
-  Option --check-news specifies that paths and fragments
+  Option --news specifies that paths and fragments
   on NEWS pages are to be checked. By default, these are not checked,
   because the Ruby core team has determined that the underlying NEWS
   pages are historical in nature and should not be modified.
 
-  Option --check-github-lines specifies that line-number fragments on GitHub pages
+  Option --github-lines specifies that line-number fragments on GitHub pages
   is to be reported as not-found. By default, this is not reported.
 
   Option --help causes the link checker to print its help text, then exit.
@@ -50,28 +50,30 @@ Usage: #{$0} [options]
   Setting the verbosity value to 'debug' tells the link checker to print
   all its progress messages.
 
+Options
+
 EOF
 
 options = {
-  check_github_lines: false,
-  check_news: false,
+  github_lines: false,
+  news: false,
   report_only: false,
   open_report: false,
   verbosity: 'minimal',
 }
 
 parser.on(
-  '--check-github-lines',
+  '--github-lines',
   'Report line-number fragments on GitHub pages.',
   )  do |arg|
-  options[:check_github_lines] = true
+  options[:github_lines] = true
 end
 
 parser.on(
-  '--check-news',
+  '--news',
   'Check paths and fragments on NEWS pages.',
   ) do
-  options[:check_news] = true
+  options[:news] = true
 end
 
 parser.on(
@@ -113,8 +115,8 @@ report_only = options.delete(:report_only)
 open_report = options.delete(:open_report)
 # These options are for reporting only.
 report_options = {
-  :check_news => options.delete(:check_news),
-  :check_github_lines => options.delete(:check_github_lines),
+  :news => options.delete(:news),
+  :github_lines => options.delete(:github_lines),
 }
 # This option is for both stashing and reporting.
 report_options[:verbosity] = options[:verbosity]

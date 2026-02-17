@@ -15,11 +15,7 @@ require_relative 'report'
 # TODO:
 # - Fix verbosity: stdout, levels.
 # - Report:
-#   - Open report in browser.
-#   - Mark page as yellow if its breaks are all fragments, red if any page breaks.
-#   - Mark fragment as info if it is not checked (github lines).
-#   - Report ignored links in pages (NEWS).
-#   - Report ignored fragments (github lines).
+#   - Open report in browser (all platforms).
 #   - Report URL parsing exceptions.
 #   - Report REXML parsing exceptions.
 # - RubyLinkChecker:
@@ -55,16 +51,16 @@ class RubyLinkChecker
     time = Time.now
     timestamp = time.strftime(Report::TIME_FORMAT)
     times['start'] = time
-    # Seed pending paths with base url.
-    pending_paths = ['']
-    # Work on the pending pages.
-    until pending_paths.empty?
-      # Take the next pending page; skip if already done.
-      path = pending_paths.shift
+    # Seed paths queue with base url.
+    paths_queue = ['']
+    # Work on the queued pages.
+    until paths_queue.empty?
+      # Take the next queued page; skip if already done.
+      path = paths_queue.shift
       next if onsite_paths[path]
       # New page.
       page = Page.new(path)
-      progress("%4.4d queued:  Dequeueing %s" % [pending_paths.size, path])
+      progress("%4.4d queued:  Dequeueing %s" % [paths_queue.size, path])
       page.check_page
       if page.onsite?
         next unless page.found
@@ -72,7 +68,7 @@ class RubyLinkChecker
       else
         offsite_paths[path] = page
       end
-      # Pend any new paths.
+      # Queue any new paths.
       page.links.each do |link|
         href = link.href
         next if href.start_with?('#')
@@ -82,13 +78,13 @@ class RubyLinkChecker
         if RubyLinkChecker.onsite?(_path) && dirname != '.'
           _path = File.join(dirname, _path)
         end
-        # Skip if done or pending.
+        # Skip if already done or already queued.
         next if onsite_paths.include?(_path)
         next if offsite_paths.include?(_path)
-        next if pending_paths.include?(_path)
-        # Pend it.
-        progress("%4.4d queued:  Queueing %s" % [pending_paths.size, _path])
-        pending_paths.push(_path)
+        next if paths_queue.include?(_path)
+        # Queue it.
+        progress("%4.4d queued:  Queueing %s" % [paths_queue.size, _path])
+        paths_queue.push(_path)
       end
     end
     times['end'] = Time.now

@@ -110,13 +110,9 @@ end
 parser.parse!
 report_only = options.delete(:report_only)
 open_report = options.delete(:open_report)
-report_options = {}
-[:check_news, :check_github_lines].each do |key|
-  report_options[key] = options.delete(key)
-end
-checker = RubyLinkChecker.new(options: options)
+checker = RubyLinkChecker.new
 checker.create_stash unless report_only
-report_filepath = checker.create_report(report_options)
+report_filepath = checker.create_report(options)
 if open_report
   command = "start #{report_filepath}"
   system(command)

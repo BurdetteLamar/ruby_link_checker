@@ -189,7 +189,7 @@ EOT
           path, fragment = link.href.split('#')
           if path && path.match('/github.com/') && path.match('/blob/')
             next if fragment&.match(/^L\d+/) &&
-                    !checker.options[:report_github_lines]
+                    !checker.options[:check_github_lines]
           end
           if checker.onsite_paths[path] || checker.offsite_paths[path]
             error = 'Fragment not found'
@@ -293,7 +293,7 @@ EOT
   end
 
   def suppressible_news?(path, checker)
-    path.match(/^NEWS/) && !checker.options[:report_news]
+    path.match(/^NEWS/) && !checker.options[:check_news]
   end
 
   def formatted_times(times)

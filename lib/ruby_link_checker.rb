@@ -35,8 +35,6 @@ class RubyLinkChecker
   SchemeList = URI.scheme_list.keys.map {|scheme| scheme.downcase}
   SchemeRegexp = Regexp.new('^(' + SchemeList.join('|') + ')')
   DEFAULT_OPTIONS = {
-    report_github_lines: false,
-    report_news: false,
     verbosity: 'minimal',
   }
 
@@ -102,13 +100,14 @@ class RubyLinkChecker
     File.write(filepath, json)
   end
 
-  def create_report
+  def create_report(report_options)
     dirpath = './ruby_link_checker'
     recent_dirname = Dir.new(dirpath).entries.last
     stash_filename = 'stash.json'
     stash_filepath = File.join(dirpath, recent_dirname, stash_filename)
     json = File.read(stash_filepath)
     checker = JSON.parse(json, create_additions: true)
+    checker.options.merge!(report_options)
     checker.verify_links
     report_filename = 'report.html'
     report_filepath = File.join(dirpath, recent_dirname, report_filename)

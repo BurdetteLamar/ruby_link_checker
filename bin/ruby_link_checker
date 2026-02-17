@@ -25,12 +25,12 @@ Usage: #{$0} [options]
   Option --verbosity controls the quantity of progress messages to be printed.
   The default value is 'moderate'; value 'quiet' suppresses progress messages.
 
-  Option --report-news specifies that broken links
-  on NEWS pages are to be reported. By default, these are not reported,
+  Option --check-news specifies that paths and fragments
+  on NEWS pages are to be checked. By default, these are not checked,
   because the Ruby core team has determined that the underlying NEWS
   pages are historical in nature and should not be modified.
 
-  Option --report-github-lines specifies that a line-number fragment on a GitHub page
+  Option --check-github-lines specifies that line-number fragments on GitHub pages
   is to be reported as not-found. By default, this is not reported.
 
   Option --help causes the link checker to print its help text, then exit.
@@ -53,25 +53,25 @@ Usage: #{$0} [options]
 EOF
 
 options = {
-  github_lines_fragments: false,
-  news_links: false,
+  check_github_lines: false,
+  check_news: false,
   report_only: false,
   open_report: false,
   verbosity: 'minimal',
 }
 
 parser.on(
-  '--github-lines-fragments',
+  '--check-github-lines',
   'Report line-number fragments on GitHub pages.',
   )  do |arg|
-  options[:github_lines_fragments] = true
+  options[:check_github_lines] = true
 end
 
 parser.on(
-  '--news-links',
-  'Report broken links on NEWS pages.',
+  '--check-news',
+  'Check paths and fragments on NEWS pages.',
   ) do
-  options[:news_links] = true
+  options[:check_news] = true
 end
 
 parser.on(
@@ -110,9 +110,13 @@ end
 parser.parse!
 report_only = options.delete(:report_only)
 open_report = options.delete(:open_report)
+report_options = {}
+[:check_news, :check_github_lines].each do |key|
+  report_options[key] = options.delete(key)
+end
 checker = RubyLinkChecker.new(options: options)
 checker.create_stash unless report_only
-report_filepath = checker.create_report
+report_filepath = checker.create_report(report_options)
 if open_report
   command = "start #{report_filepath}"
   system(command)

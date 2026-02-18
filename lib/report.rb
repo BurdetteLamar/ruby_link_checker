@@ -33,8 +33,19 @@ EOT
     info_count: 'data number info',
   }
 
+  attr_accessor :onsite_paths, :offsite_paths
+
   # Create the report for info gathered by the checker.
   def initialize(checker, filepath)
+    self.onsite_paths = {}
+    self.offsite_paths = {}
+    checker.paths.each_pair do |path, page|
+      if RubyLinkChecker.onsite?(path)
+        self.onsite_paths[path] = page
+      else
+        self.offsite_paths[path] = page
+      end
+    end
     doc = REXML::Document.new('')
     html = doc.add_element(Element.new('html'))
 
@@ -80,7 +91,7 @@ EOT
     offsite_link_count = 0
     broken_path_count = 0
     broken_fragment_count = 0
-    checker.onsite_paths.each_pair do |path, page|
+    onsite_paths.each_pair do |path, page|
       page.links.each do |link|
         if RubyLinkChecker.onsite?(link.href)
           onsite_link_count += 1
@@ -98,8 +109,8 @@ EOT
       end
     end
     data = [
-      {'Onsite Pages' => :label, checker.onsite_paths.size => :info_count},
-      {'Offsite Pages' => :label, checker.offsite_paths.size => :info_count},
+      {'Onsite Pages' => :label, onsite_paths.size => :info_count},
+      {'Offsite Pages' => :label, offsite_paths.size => :info_count},
       {'Onsite Links' => :label, onsite_link_count => :info_count},
       {'Offsite Links' => :label, offsite_link_count => :info_count},
       {'Paths Not Found' => :label, broken_path_count => :bad_count},
@@ -110,7 +121,7 @@ EOT
 
   def add_onsite_paths(body, checker)
     h2 = body.add_element(Element.new('h2'))
-    h2.text = "Onsite Pages (#{checker.onsite_paths.size})"
+    h2.text = "Onsite Pages (#{onsite_paths.size})"
 
     table = body.add_element('table')
     table.add_attribute('width', '50%')
@@ -124,8 +135,8 @@ EOT
       th.text = header
       th.add_attribute('class', CSS_CLASSES[:info_text])
     end
-    checker.onsite_paths.keys.sort.each_with_index do |path, page_id|
-      page = checker.onsite_paths[path]
+    onsite_paths.keys.sort.each_with_index do |path, page_id|
+      page = onsite_paths[path]
       if path.empty?
         path = RubyLinkChecker::BASE_URL
       end
@@ -191,10 +202,10 @@ EOT
             next if fragment&.match(/^L\d+/) &&
                     !checker.options[:github_lines]
           end
-          if checker.onsite_paths[path] || checker.offsite_paths[path]
+          if checker.paths[path]
             error = 'Fragment not found'
             path_status = :good_text
-            fragment_status =  checker.offsite_paths[path] ? :iffy_text : :bad_text
+            fragment_status =  offsite_paths[path] ? :iffy_text : :bad_text
           else
             error = 'Path Not Found'
             path_status = :bad_text
@@ -226,10 +237,10 @@ EOT
 
   def add_offsite_paths(body, checker)
     h2 = body.add_element(Element.new('h2'))
-    h2.text = "Offsite Pages (#{checker.offsite_paths.size})"
+    h2.text = "Offsite Pages (#{offsite_paths.size})"
 
     paths_by_url = {}
-    checker.offsite_paths.each_pair do |path, page|
+    offsite_paths.each_pair do |path, page|
       next unless page.found
       uri = URI(path)
       if uri.scheme.nil?

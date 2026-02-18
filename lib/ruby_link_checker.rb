@@ -1,5 +1,4 @@
 require 'net/http'
-require 'rexml'
 require 'json'
 require 'json/add/time'
 require 'fileutils'
@@ -26,8 +25,6 @@ require_relative 'report'
 
 class RubyLinkChecker
 
-  include REXML
-
   SchemeList = URI.scheme_list.keys.map {|scheme| scheme.downcase}
   SchemeRegexp = Regexp.new('^(' + SchemeList.join('|') + ')')
   DEFAULT_OPTIONS = {
@@ -37,12 +34,11 @@ class RubyLinkChecker
   # URL for documentation base page.
   BASE_URL = 'https://docs.ruby-lang.org/en/master'
 
-  attr_accessor :onsite_paths, :offsite_paths, :times, :options
+  attr_accessor :paths, :times, :options
 
   # Return a new RubyLinkChecker object.
-  def initialize(onsite_paths = {}, offsite_paths = {}, times = {}, options: {})
-    self.onsite_paths = onsite_paths
-    self.offsite_paths = offsite_paths
+  def initialize(paths = {}, times = {}, options: {})
+    self.paths = paths
     self.times = times
     self.options = DEFAULT_OPTIONS.merge(options)
   end
@@ -57,17 +53,12 @@ class RubyLinkChecker
     until paths_queue.empty?
       # Take the next queued page; skip if already done.
       path = paths_queue.shift
-      next if onsite_paths[path]
+      next if paths[path]
       # New page.
       page = Page.new(path)
       progress("%4.4d queued:  Dequeueing %s" % [paths_queue.size, path])
       page.check_page
-      if page.onsite?
-        next unless page.found
-        onsite_paths[path] = page
-      else
-        offsite_paths[path] = page
-      end
+      paths[path] = page
       # Queue any new paths.
       page.links.each do |link|
         href = link.href
@@ -79,8 +70,7 @@ class RubyLinkChecker
           _path = File.join(dirname, _path)
         end
         # Skip if already done or already queued.
-        next if onsite_paths.include?(_path)
-        next if offsite_paths.include?(_path)
+        next if paths.include?(_path)
         next if paths_queue.include?(_path)
         # Queue it.
         progress("%4.4d queued:  Queueing %s" % [paths_queue.size, _path])
@@ -112,7 +102,8 @@ class RubyLinkChecker
   end
 
   def verify_links
-    onsite_paths.each_pair do |path, page|
+    paths.each_pair do |path, page|
+      next if page.offsite?
       page.links.each do |link|
         path, fragment = link.href.split('#')
         if path.nil? || path.empty?
@@ -125,15 +116,14 @@ class RubyLinkChecker
         elsif fragment.nil?
           # Path only.
           href = link.href.sub(%r[^\./], '').sub(%r[/$], '')
-          if onsite_paths.keys.include?(href) ||
-             offsite_paths.keys.include?(href)
+          if paths.keys.include?(href)
             link.status = :valid
           else
             link.status = :path_not_found
           end
         else
           # Both path and fragment.
-          target_page = target_page(path)
+          target_page = paths[path]
           if target_page.nil?
             link.status = :path_not_found
           elsif target_page.ids.include?(fragment)
@@ -144,10 +134,6 @@ class RubyLinkChecker
         end
       end
     end
-  end
-
-  def target_page(path)
-    onsite_paths[path] || offsite_paths[path]
   end
 
   # Returns whether the path is onsite.
@@ -171,7 +157,7 @@ class RubyLinkChecker
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
-      'a'             => [ onsite_paths, offsite_paths, times ],
+      'a'             => [ paths, times ],
     }.to_json(*args)
   end
 

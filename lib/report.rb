@@ -18,11 +18,12 @@ class Report
 .iffy    { color: rgb(156, 101,   0); background-color: rgb(255, 235, 156) } /* Yellowish */
 .bad     { color: rgb(156,   0,   6); background-color: rgb(255, 199, 206) } /* Reddish */
 .info    { color: rgb(  0,   0,   0); background-color: rgb(217, 217, 214) } /* Grayish */
+.header  { color: rgb(255, 255, 255); background-color: rgb(  0,   0,   0) } /* White on black */
 EOT
 
   CSS_CLASSES = {
     label:        'text info',
-    table_header: 'header info',
+    table_header: 'header',
 
     good_text:  'data text good',
     iffy_text:  'data text iffy',
@@ -137,9 +138,6 @@ EOT
     th.text = 'Path'
     th.add_attribute('rowspan', '2')
     th = tr.add_element('th')
-    th.text = 'Ids'
-    th.add_attribute('rowspan', '2')
-    th = tr.add_element('th')
     th.text = 'Links'
     th.add_attribute('colspan', '2')
     th = tr.add_element('th')
@@ -176,7 +174,7 @@ EOT
       row_class = :info_text
       tr.add_attribute('class', CSS_CLASSES[row_class])
       values =  [
-        path, page.ids.size, onsite_links.size, offsite_links.size,
+        path, onsite_links.size, offsite_links.size,
         page_not_found_links.size, fragment_not_found_links.size
       ]
       breaks_found = page_not_found_links + fragment_not_found_links
@@ -194,7 +192,7 @@ EOT
           td.text = value
           td.add_attribute('align', 'right')
         end
-        if i == 4
+        if i == 3
           if suppressible_news?(path, checker)
             cell_class = :info_count
           else
@@ -202,7 +200,7 @@ EOT
           end
           td.add_attribute('class', CSS_CLASSES[cell_class])
         end
-        if i == 5
+        if i == 4
           if suppressible_news?(path, checker)
             cell_class = :info_count
           else

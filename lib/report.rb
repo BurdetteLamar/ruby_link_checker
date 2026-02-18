@@ -116,7 +116,7 @@ EOT
       {'Offsite Pages' => :label, offsite_paths.size => :info_count},
       {'Onsite Links' => :label, onsite_link_count => :info_count},
       {'Offsite Links' => :label, offsite_link_count => :info_count},
-      {'Paths Not Found' => :label, broken_path_count => :bad_count},
+      {'Pages Not Found' => :label, broken_path_count => :bad_count},
       {'Fragments Not Found' => :label, broken_fragment_count => :iffy_count},
     ]
     table2(body, data, 'summary', 'Pages and Links')
@@ -125,17 +125,87 @@ EOT
   def add_onsite_paths(body, checker)
     h2 = body.add_element(Element.new('h2'))
     h2.text = "Onsite Pages (#{onsite_paths.size})"
+    p = body.add_element('p')
+    p.text = <<EOT
+The large table below lists the pages found in the Ruby documentation.
+For each page, the table shows the counts of its links (onsite and offsite),
+and the counts of its troubled links (pages not found and fragments not found).
 
+For a page that has troubled links, the page is linked to details
+farther down in this report.
+EOT
+
+    p = body.add_element('p')
+    p.text = 'For pages not found (next-to-last column on the right):'
     table = body.add_element('table')
-    table.add_attribute('width', '50%')
-    headers = [
-      'Path', 'Ids', "Onsite Links",
-      'Offsite Links', 'Paths Not Found', 'Fragments Not Found',
-    ]
+    tr = table.add_element('tr')
+    th = tr.add_element('th')
+    th.text = 'Color'
+    th.add_attribute('class', CSS_CLASSES[:table_header])
+    th = tr.add_element('th')
+    th.text = 'Status'
+    th.add_attribute('class', CSS_CLASSES[:table_header])
+    tr = table.add_element('tr')
+    td = tr.add_element('td')
+    td.text = 'Greenish'
+    td.add_attribute('class', CSS_CLASSES[:good_text])
+    td = tr.add_element('td')
+    td.text = 'All linked pages were found.'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+    tr = table.add_element('tr')
+    td = tr.add_element('td')
+    td.text = 'Reddish'
+    td.add_attribute('class', CSS_CLASSES[:bad_text])
+    td = tr.add_element('td')
+    td.text = 'Some linked pages were not found.'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+    tr = table.add_element('tr')
+    td = tr.add_element('td')
+    td.text = 'Grayish'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+    td = tr.add_element('td')
+    td.text = 'The linked pages were not checked.'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+
+    p = body.add_element('p')
+    p.text = 'For fragments not found (the last column on the right):'
+    table = body.add_element('table')
+    tr = table.add_element('tr')
+    th = tr.add_element('th')
+    th.text = 'Color'
+    th.add_attribute('class', CSS_CLASSES[:table_header])
+    th = tr.add_element('th')
+    th.text = 'Status'
+    th.add_attribute('class', CSS_CLASSES[:table_header])
+    tr = table.add_element('tr')
+    td = tr.add_element('td')
+    td.text = 'Greenish'
+    td.add_attribute('class', CSS_CLASSES[:good_text])
+    td = tr.add_element('td')
+    td.text = 'All linked fragments were found.'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+    tr = table.add_element('tr')
+    td = tr.add_element('td')
+    td.text = 'Yellowish'
+    td.add_attribute('class', CSS_CLASSES[:iffy_text])
+    td = tr.add_element('td')
+    td.text = 'Some linked fragments were not found.'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+    tr = table.add_element('tr')
+    td = tr.add_element('td')
+    td.text = 'Grayish'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+    td = tr.add_element('td')
+    td.text = 'The linked fragments were not checked.'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+
+    p = body.add_element('p')
+    p.text = 'The Ruby documentation pages:'
+    table = body.add_element('table')
     tr = table.add_element('tr')
     tr.add_attribute('class', CSS_CLASSES[:table_header])
     th = tr.add_element('th')
-    th.text = 'Path'
+    th.text = 'Page'
     th.add_attribute('rowspan', '2')
     th = tr.add_element('th')
     th.text = 'Links'
@@ -150,7 +220,7 @@ EOT
     th = tr.add_element('th')
     th.text = 'Offsite'
     th = tr.add_element('th')
-    th.text = 'Paths'
+    th.text = 'Pages'
     th = tr.add_element('th')
     th.text = 'Fragments'
     # tr = table.add_element('tr')

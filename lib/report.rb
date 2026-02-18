@@ -12,6 +12,7 @@ class Report
 
 .text    { text-align: left }
 .number  { text-align: right }
+.header  { text-align: center }
 
 .good    { color: rgb(  0,  97,   0); background-color: rgb(198, 239, 206) } /* Greenish */
 .iffy    { color: rgb(156, 101,   0); background-color: rgb(255, 235, 156) } /* Yellowish */
@@ -20,7 +21,8 @@ class Report
 EOT
 
   CSS_CLASSES = {
-    label:      'text info',
+    label:        'text info',
+    table_header: 'header info',
 
     good_text:  'data text good',
     iffy_text:  'data text iffy',
@@ -130,11 +132,35 @@ EOT
       'Offsite Links', 'Paths Not Found', 'Fragments Not Found',
     ]
     tr = table.add_element('tr')
-    headers.each do |header|
-      th = tr.add_element('th')
-      th.text = header
-      th.add_attribute('class', CSS_CLASSES[:info_text])
-    end
+    tr.add_attribute('class', CSS_CLASSES[:table_header])
+    th = tr.add_element('th')
+    th.text = 'Path'
+    th.add_attribute('rowspan', '2')
+    th = tr.add_element('th')
+    th.text = 'Ids'
+    th.add_attribute('rowspan', '2')
+    th = tr.add_element('th')
+    th.text = 'Links'
+    th.add_attribute('colspan', '2')
+    th = tr.add_element('th')
+    th.text = 'Not Found'
+    th.add_attribute('colspan', '2')
+    tr = table.add_element('tr')
+    tr.add_attribute('class', CSS_CLASSES[:table_header])
+    th = tr.add_element('th')
+    th.text = 'Onsite'
+    th = tr.add_element('th')
+    th.text = 'Offsite'
+    th = tr.add_element('th')
+    th.text = 'Paths'
+    th = tr.add_element('th')
+    th.text = 'Fragments'
+    # tr = table.add_element('tr')
+    # headers.each do |header|
+    #   th = tr.add_element('th')
+    #   th.text = header
+    #   th.add_attribute('class', CSS_CLASSES[:info_text])
+    # end
     onsite_paths.keys.sort.each_with_index do |path, page_id|
       page = onsite_paths[path]
       if path.empty?

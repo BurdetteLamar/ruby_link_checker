@@ -14,10 +14,10 @@ class Report
 .number  { text-align: right }
 .header  { text-align: center }
 
-.good    { color: rgb(  0,  97,   0); background-color: rgb(198, 239, 206) } /* Greenish */
-.iffy    { color: rgb(156, 101,   0); background-color: rgb(255, 235, 156) } /* Yellowish */
-.bad     { color: rgb(156,   0,   6); background-color: rgb(255, 199, 206) } /* Reddish */
-.info    { color: rgb(  0,   0,   0); background-color: rgb(217, 217, 214) } /* Grayish */
+.good    { color: rgb(  0,  97,   0); background-color: rgb(198, 239, 206) } /* Green */
+.iffy    { color: rgb(156, 101,   0); background-color: rgb(255, 235, 156) } /* Yellow */
+.bad     { color: rgb(156,   0,   6); background-color: rgb(255, 199, 206) } /* Redd */
+.info    { color: rgb(  0,   0,   0); background-color: rgb(217, 217, 214) } /* Gray */
 .header  { color: rgb(255, 255, 255); background-color: rgb(  0,   0,   0) } /* White on black */
 EOT
 
@@ -147,21 +147,21 @@ EOT
     th.add_attribute('class', CSS_CLASSES[:table_header])
     tr = table.add_element('tr')
     td = tr.add_element('td')
-    td.text = 'Greenish'
+    td.text = 'Green'
     td.add_attribute('class', CSS_CLASSES[:good_text])
     td = tr.add_element('td')
     td.text = 'All linked pages were found.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     tr = table.add_element('tr')
     td = tr.add_element('td')
-    td.text = 'Reddish'
+    td.text = 'Redd'
     td.add_attribute('class', CSS_CLASSES[:bad_text])
     td = tr.add_element('td')
     td.text = 'Some linked pages were not found.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     tr = table.add_element('tr')
     td = tr.add_element('td')
-    td.text = 'Grayish'
+    td.text = 'Gray'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     td = tr.add_element('td')
     td.text = 'The linked pages were not checked.'
@@ -179,21 +179,21 @@ EOT
     th.add_attribute('class', CSS_CLASSES[:table_header])
     tr = table.add_element('tr')
     td = tr.add_element('td')
-    td.text = 'Greenish'
+    td.text = 'Green'
     td.add_attribute('class', CSS_CLASSES[:good_text])
     td = tr.add_element('td')
     td.text = 'All linked fragments were found.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     tr = table.add_element('tr')
     td = tr.add_element('td')
-    td.text = 'Yellowish'
+    td.text = 'Yellow'
     td.add_attribute('class', CSS_CLASSES[:iffy_text])
     td = tr.add_element('td')
     td.text = 'Some linked fragments were not found.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     tr = table.add_element('tr')
     td = tr.add_element('td')
-    td.text = 'Grayish'
+    td.text = 'Gray'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     td = tr.add_element('td')
     td.text = 'The linked fragments were not checked.'

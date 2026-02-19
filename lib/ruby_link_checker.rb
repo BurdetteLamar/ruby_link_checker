@@ -87,53 +87,7 @@ class RubyLinkChecker
   end
 
   def create_report(report_options)
-    dirpath = './ruby_link_checker'
-    recent_dirname = Dir.new(dirpath).entries.last
-    stash_filename = 'stash.json'
-    stash_filepath = File.join(dirpath, recent_dirname, stash_filename)
-    json = File.read(stash_filepath)
-    checker = JSON.parse(json, create_additions: true)
-    checker.options.merge!(report_options)
-    checker.verify_links
-    report_filename = 'report.html'
-    report_filepath = File.join(dirpath, recent_dirname, report_filename)
-    Report.new(checker, report_filepath)
-    report_filepath
-  end
-
-  def verify_links
-    paths.each_pair do |path, page|
-      next if page.offsite?
-      page.links.each do |link|
-        path, fragment = link.href.split('#')
-        if path.nil? || path.empty?
-          # Fragment only.
-          if page.ids.include?(fragment)
-            link.status = :valid
-          else
-            link.status = :fragment_not_found
-          end
-        elsif fragment.nil?
-          # Path only.
-          href = link.href.sub(%r[^\./], '').sub(%r[/$], '')
-          if paths.keys.include?(href)
-            link.status = :valid
-          else
-            link.status = :path_not_found
-          end
-        else
-          # Both path and fragment.
-          target_page = paths[path]
-          if target_page.nil?
-            link.status = :path_not_found
-          elsif target_page.ids.include?(fragment)
-            link.status = :valid
-          else
-            link.status = :fragment_not_found
-          end
-        end
-      end
-    end
+    Report.new.create_report(report_options)
   end
 
   # Returns whether the path is onsite.

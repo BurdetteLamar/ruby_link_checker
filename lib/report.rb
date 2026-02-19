@@ -36,10 +36,21 @@ EOT
     info_count: 'data number info',
   }
 
-  attr_accessor :onsite_paths, :offsite_paths
+  attr_accessor :onsite_paths, :offsite_paths, :paths
 
   # Create the report for info gathered by the checker.
-  def initialize(checker, filepath)
+  def create_report(report_options)
+    dirpath = './ruby_link_checker'
+    recent_dirname = Dir.new(dirpath).entries.last
+    stash_filename = 'stash.json'
+    stash_filepath = File.join(dirpath, recent_dirname, stash_filename)
+    json = File.read(stash_filepath)
+    checker = JSON.parse(json, create_additions: true)
+    checker.options.merge!(report_options)
+    self.paths = checker.paths
+    verify_links
+    report_filename = 'report.html'
+    report_filepath = File.join(dirpath, recent_dirname, report_filename)
     self.onsite_paths = {}
     self.offsite_paths = {}
     checker.paths.each_pair do |path, page|
@@ -64,11 +75,11 @@ EOT
     add_onsite_paths(body, checker)
     add_offsite_paths(body, checker)
 
-    f = File.open(filepath, 'w')
+    f = File.open(report_filepath, 'w')
     doc.write(f, 2)
     f.close
-    puts "Report file: #{filepath}"
-
+    puts "Report file: #{report_filepath}"
+    report_filepath
   end
 
   def add_title(body)
@@ -154,7 +165,7 @@ EOT
     td.add_attribute('class', CSS_CLASSES[:info_text])
     tr = table.add_element('tr')
     td = tr.add_element('td')
-    td.text = 'Redd'
+    td.text = 'Red'
     td.add_attribute('class', CSS_CLASSES[:bad_text])
     td = tr.add_element('td')
     td.text = 'Some linked pages were not found.'
@@ -407,6 +418,41 @@ EOT
     minutes, seconds = (end_time - start_time).divmod(60)
     elapsed = "%d:%02d" % [minutes, seconds]
     [start_time.strftime(TIME_FORMAT), end_time.strftime(TIME_FORMAT),  elapsed]
+  end
+
+  def verify_links
+    paths.each_pair do |path, page|
+      next if page.offsite?
+      page.links.each do |link|
+        path, fragment = link.href.split('#')
+        if path.nil? || path.empty?
+          # Fragment only.
+          if page.ids.include?(fragment)
+            link.status = :valid
+          else
+            link.status = :fragment_not_found
+          end
+        elsif fragment.nil?
+          # Path only.
+          href = link.href.sub(%r[^\./], '').sub(%r[/$], '')
+          if paths.keys.include?(href)
+            link.status = :valid
+          else
+            link.status = :path_not_found
+          end
+        else
+          # Both path and fragment.
+          target_page = paths[path]
+          if target_page.nil?
+            link.status = :path_not_found
+          elsif target_page.ids.include?(fragment)
+            link.status = :valid
+          else
+            link.status = :fragment_not_found
+          end
+        end
+      end
+    end
   end
 
 end

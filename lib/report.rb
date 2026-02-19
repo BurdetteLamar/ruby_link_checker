@@ -40,6 +40,7 @@ EOT
 
   # Create the report for info gathered by the checker.
   def create_report(report_options)
+    start_time = Time.now
     dirpath = './ruby_link_checker'
     recent_dirname = Dir.new(dirpath).entries.last
     stash_filename = 'stash.json'
@@ -99,7 +100,7 @@ EOT
       {'End Time' => :label, end_time => :info_text},
       {'Duration' => :label, duration => :info_text},
     ]
-    table2(body, data, 'gathering', 'Gathered Time')
+    table2(body, data, 'gathering', 'Gathering')
 
     onsite_link_count = 0
     offsite_link_count = 0
@@ -317,14 +318,13 @@ EOT
             fragment_status = :info_text
           end
           h4 = body.add_element('h4')
-          h4.text = error
           data = [
             {'Path' => :label, path => path_status},
             {'Fragment' => :label, fragment => fragment_status},
             {'Text' => :label, link.text => :info_text},
             {'Line Number' => :label, link.lineno => :info_text},
           ]
-          table2(body, data, "#{path}-summary")
+          table2(body, data, "#{path}-summary", error)
         end
       end
       page.exceptions.each do |exception|
@@ -386,6 +386,7 @@ EOT
       tr = table.add_element(Element.new('tr)'))
       th = tr.add_element(Element.new('th'))
       th.add_attribute('colspan', 2)
+      th.add_attribute('class', CSS_CLASSES[:table_header])
       if title.kind_of?(REXML::Element)
         th.add_element(title)
       else
@@ -406,6 +407,7 @@ EOT
       end
       td.add_attribute('class', CSS_CLASSES[value_class])
     end
+    parent.add_element('p')
   end
 
   def suppressible_news?(path, checker)

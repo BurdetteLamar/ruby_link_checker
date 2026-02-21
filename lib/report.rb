@@ -141,9 +141,9 @@ EOT
     p.text = <<EOT
 The large table below lists the pages found in the Ruby documentation.
 For each page, the table shows the counts of its links (onsite and offsite),
-and the counts of its troubled links (pages not found and fragments not found).
+and the counts of its unverified links (pages not found and fragments not found).
 
-For a page that has troubled links, the page is linked to details
+For a page that has unverified links, the page is linked to details
 farther down in this report.
 EOT
 

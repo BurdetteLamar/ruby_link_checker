@@ -112,10 +112,16 @@ class Page
       get_anchors(snippet).each do |anchor|
         begin
           doc = REXML::Document.new(anchor)
-          href = doc.root.attributes['href']
-          text = doc.root.text
-          link = Link.new(page_path, lineno, href, text)
-          links.push(link)
+          root = doc.root
+          href = root.attributes['href']
+          text = root.text
+          if text.nil? && root.children.size > 0
+            text = root.children[0].text
+          end
+          if text
+            link = Link.new(page_path, lineno, href, text)
+            links.push(link)
+          end
         rescue REXML::ParseException => x
           message = "REXML::Document.new(anchor) failed for #{anchor}."
           exception = AnchorParseException.new(message, 'anchor', anchor, x)

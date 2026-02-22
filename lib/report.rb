@@ -85,7 +85,7 @@ EOT
 
   def add_title(body)
     h1 = body.add_element(Element.new('h1'))
-    h1.text = "RDocLinkChecker Report"
+    h1.text = "RubyLinkChecker Report"
     h2 = body.add_element('h2')
     h2.text = 'Generated: ' + Time.now.strftime(TIME_FORMAT)
   end

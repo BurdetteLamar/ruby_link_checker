@@ -138,17 +138,67 @@ EOT
     h2 = body.add_element(Element.new('h2'))
     h2.text = "Onsite Pages (#{onsite_paths.size})"
     p = body.add_element('p')
-    p.text = <<EOT
-The large table below lists the pages found in the Ruby documentation.
-For each page, the table shows the counts of its links (onsite and offsite),
-and the counts of its unverified links (pages not found and fragments not found).
-
-For a page that has unverified links, the page is linked to details
+    p.text = 'The large table below lists the pages found in the Ruby documentation.'
+    p = body.add_element('p')
+    p.text = 'The table columns:'
+    ul0 = body.add_element('ul')
+    li = ul0.add_element('li')
+    b = li.add_element('b')
+    b.text = 'Path:'
+    li.text = <<EOT
+The path to the page (on the Ruby documentation site).
+If the page has unverified links, the path is linked to details
 farther down in this report.
 EOT
+    ul1 = ul0.add_element('ul')
+    li = ul1.add_element('li')
+    b = li.add_element('b')
+    b.text = 'Onsite:'
+    li.text = 'Information about onsite links on the page.'
+    ul2 = ul1.add_element('ul')
+    li = ul2.add_element('li')
+    b = li.add_element('b')
+    b.text = 'Links:'
+    li.text = 'Count of onsite links on the page.'
+    li = ul2.add_element('li')
+    b = li.add_element('b')
+    b.text = 'Not Found:'
+    li.text = 'Information about onsite links whose pages or fragments are unverified.'
+    ul3 = ul2.add_element('ul')
+    li = ul3.add_element('li')
+    b = li.add_element('b')
+    b.text = 'Pages'
+    li.text = 'Count of onsite links whose pages are unverified.'
+    li = ul3.add_element('li')
+    b = li.add_element('b')
+    b.text = 'Fragments:'
+    li.text = 'Count of onsite links whose fragments are unverified.'
+    ul1 = ul0.add_element('ul')
+    li = ul1.add_element('li')
+    b = li.add_element('b')
+    b.text = 'Offsite:'
+    li.text = 'Information about offsite links on the page.'
+    ul2 = ul1.add_element('ul')
+    li = ul2.add_element('li')
+    b = li.add_element('b')
+    b.text = 'Links:'
+    li.text = 'Count of offsite links on the page.'
+    li = ul2.add_element('li')
+    b = li.add_element('b')
+    b.text = 'Not Found:'
+    li.text = 'Information about offsite links whose pages or fragments are unverified.'
+    ul3 = ul2.add_element('ul')
+    li = ul3.add_element('li')
+    b = li.add_element('b')
+    b.text = 'Pages'
+    li.text = 'Count of offsite links whose pages are unverified.'
+    li = ul3.add_element('li')
+    b = li.add_element('b')
+    b.text = 'Fragments:'
+    li.text = 'Count of offsite links whose fragments are unverified.'
 
     p = body.add_element('p')
-    p.text = 'For pages not found (next-to-last column on the right):'
+    p.text = 'Colors in the table:'
     table = body.add_element('table')
     tr = table.add_element('tr')
     th = tr.add_element('th')
@@ -162,54 +212,46 @@ EOT
     td.text = 'Green'
     td.add_attribute('class', CSS_CLASSES[:good_text])
     td = tr.add_element('td')
-    td.text = 'All linked pages were found.'
+    td.text = 'All linked pages or fragments were found.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     tr = table.add_element('tr')
     td = tr.add_element('td')
     td.text = 'Red'
     td.add_attribute('class', CSS_CLASSES[:bad_text])
     td = tr.add_element('td')
-    td.text = 'Some linked pages were not found.'
-    td.add_attribute('class', CSS_CLASSES[:info_text])
-    tr = table.add_element('tr')
-    td = tr.add_element('td')
-    td.text = 'Gray'
-    td.add_attribute('class', CSS_CLASSES[:info_text])
-    td = tr.add_element('td')
-    td.text = 'The linked pages were not checked.'
-    td.add_attribute('class', CSS_CLASSES[:info_text])
-
-    p = body.add_element('p')
-    p.text = 'For fragments not found (the last column on the right):'
-    table = body.add_element('table')
-    tr = table.add_element('tr')
-    th = tr.add_element('th')
-    th.text = 'Color'
-    th.add_attribute('class', CSS_CLASSES[:table_header])
-    th = tr.add_element('th')
-    th.text = 'Status'
-    th.add_attribute('class', CSS_CLASSES[:table_header])
-    tr = table.add_element('tr')
-    td = tr.add_element('td')
-    td.text = 'Green'
-    td.add_attribute('class', CSS_CLASSES[:good_text])
-    td = tr.add_element('td')
-    td.text = 'All linked fragments were found.'
+    td.text = 'Some linked pages or onsite fragments were not found.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     tr = table.add_element('tr')
     td = tr.add_element('td')
     td.text = 'Yellow'
     td.add_attribute('class', CSS_CLASSES[:iffy_text])
     td = tr.add_element('td')
-    td.text = 'Some linked fragments were not found.'
+    td.text = 'Some offsite fragments were not found.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     tr = table.add_element('tr')
     td = tr.add_element('td')
     td.text = 'Gray'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     td = tr.add_element('td')
-    td.text = 'The linked fragments were not checked.'
+    td.text = 'The linked pages and fragments were not checked.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
+
+    p = body.add_element('p')
+    p.text = 'About fragments that were not found:'
+    ul = body.add_element('ul')
+    li = ul.add_element('li')
+    li.text = <<EOT
+An onsite fragment that was not found is shown as red (a definite error)
+because every onsite fragment should be found.
+(After all, we at Ruby own both the linking page and the linked page.)
+EOT
+    li = ul.add_element('li')
+    li.text = <<EOT
+An offsite fragment that was not found is shown as yellow (a possible error)
+because some fragment targets on offsite pages may not be found by the link checker.
+(It can be complicated.)'
+EOT
+
     p = body.add_element('p')
     p.text = 'The Ruby documentation pages:'
 

@@ -85,7 +85,7 @@ EOT
 
   def add_title(body)
     h1 = body.add_element(Element.new('h1'))
-    h1.text = "RubyLinkChecker Report"
+    h1.text = "Ruby Link Checker Report"
     h2 = body.add_element('h2')
     h2.text = 'Generated: ' + Time.now.strftime(TIME_FORMAT)
   end
@@ -210,89 +210,94 @@ EOT
     td = tr.add_element('td')
     td.text = 'The linked fragments were not checked.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
-
     p = body.add_element('p')
     p.text = 'The Ruby documentation pages:'
+
     table = body.add_element('table')
-    tr = table.add_element('tr')
-    tr.add_attribute('class', CSS_CLASSES[:table_header])
-    th = tr.add_element('th')
-    th.text = 'Page'
-    th.add_attribute('rowspan', '2')
-    th = tr.add_element('th')
-    th.text = 'Links'
-    th.add_attribute('colspan', '2')
-    th = tr.add_element('th')
-    th.text = 'Not Found'
-    th.add_attribute('colspan', '2')
-    tr = table.add_element('tr')
-    tr.add_attribute('class', CSS_CLASSES[:table_header])
-    th = tr.add_element('th')
-    th.text = 'Onsite'
-    th = tr.add_element('th')
-    th.text = 'Offsite'
-    th = tr.add_element('th')
-    th.text = 'Pages'
-    th = tr.add_element('th')
-    th.text = 'Fragments'
-    # tr = table.add_element('tr')
-    # headers.each do |header|
-    #   th = tr.add_element('th')
-    #   th.text = header
-    #   th.add_attribute('class', CSS_CLASSES[:info_text])
-    # end
+
+
     onsite_paths.keys.sort.each_with_index do |path, page_id|
+      if (page_id % 20) == 0
+        insert_main_headers(table)
+      end
       page = onsite_paths[path]
       if path.empty?
         path = RubyLinkChecker::BASE_URL
       end
       onsite_links = page.links.select {|link| RubyLinkChecker.onsite?(link.href) }
+      onsite_page_not_found_links = onsite_links.select {|link| link.status == :path_not_found}
+      onsite_fragment_not_found_links = onsite_links.select {|link| link.status == :fragment_not_found}
       offsite_links = page.links - onsite_links
-      all_links = onsite_links + offsite_links
-      page_not_found_links = all_links.select {|link| link.status == :path_not_found}
-      fragment_not_found_links = all_links.select {|link| link.status == :fragment_not_found}
-      broken_links = page_not_found_links + fragment_not_found_links
+      offsite_page_not_found_links = offsite_links.select {|link| link.status == :path_not_found}
+      offsite_fragment_not_found_links = offsite_links.select {|link| link.status == :fragment_not_found}
       tr = table.add_element('tr')
       row_class = :info_text
       tr.add_attribute('class', CSS_CLASSES[row_class])
       values =  [
-        path, onsite_links.size, offsite_links.size,
-        page_not_found_links.size, fragment_not_found_links.size
+        path,
+        onsite_links.size, onsite_page_not_found_links.size, onsite_fragment_not_found_links.size,
+        offsite_links.size, offsite_page_not_found_links.size, offsite_fragment_not_found_links.size,
       ]
-      breaks_found = page_not_found_links + fragment_not_found_links
+      break_count =
+        onsite_page_not_found_links.size + onsite_fragment_not_found_links.size +
+        offsite_page_not_found_links.size + offsite_fragment_not_found_links.size
       values.each_with_index do |value, i|
         td = tr.add_element('td')
-        if i == 0
-          if breaks_found.empty? || suppressible_news?(path, checker)
+        case i
+        when 0 # Page column.
+          if (break_count == 0) || suppressible_news?(path, checker)
             td.text = value
           else
             a = td.add_element('a')
             a.add_attribute('href', "##{page_id}")
             a.text = value
           end
-        else
+        when 1 # Onsite Links column.
           td.text = value
           td.add_attribute('align', 'right')
-        end
-        if i == 3
+        when 2 # Onsite Not Found/Pages column.
+          td.text = value
+          td.add_attribute('align', 'right')
           if suppressible_news?(path, checker)
             cell_class = :info_count
           else
-            cell_class = page_not_found_links.empty? ? :good_count : :bad_count
+            cell_class = onsite_page_not_found_links.empty? ? :good_count : :bad_count
           end
           td.add_attribute('class', CSS_CLASSES[cell_class])
-        end
-        if i == 4
+        when 3 # Onsite Not Found/Fragments column.
+          td.text = value
+          td.add_attribute('align', 'right')
           if suppressible_news?(path, checker)
             cell_class = :info_count
           else
-            cell_class = fragment_not_found_links.empty? ? :good_count : :iffy_count
+            cell_class = onsite_fragment_not_found_links.empty? ? :good_count : :bad_count
           end
           td.add_attribute('class', CSS_CLASSES[cell_class])
+        when 4 # Offsite Links column.
+          td.text = value
+          td.add_attribute('align', 'right')
+        when 5 # Offsite Not Found/Pages column.
+          td.text = value
+          td.add_attribute('align', 'right')
+          if suppressible_news?(path, checker)
+            cell_class = :info_count
+          else
+            cell_class = offsite_page_not_found_links.empty? ? :good_count : :bad_count
+          end
+          td.add_attribute('class', CSS_CLASSES[cell_class])
+        when 6 # Offsite Not Found/Fragments column.
+          td.text = value
+          td.add_attribute('align', 'right')
+          if suppressible_news?(path, checker)
+            cell_class = :info_count
+          else
+            cell_class = offsite_fragment_not_found_links.empty? ? :good_count : :iffy_count
+          end
+          td.add_attribute('class', CSS_CLASSES[cell_class])
+
         end
       end
-      broken_links = page_not_found_links + fragment_not_found_links
-      next if broken_links.empty? && page.exceptions.empty?
+      next if (break_count == 0) && page.exceptions.empty?
       next if suppressible_news?(path, checker)
       h3 = body.add_element('h3')
       h3.add_attribute('id', page_id)
@@ -300,7 +305,7 @@ EOT
       a.text = path
       a.add_attribute('href', File.join(RubyLinkChecker::BASE_URL, path))
       h3.add_element(a)
-      unless broken_links.empty?
+      unless break_count == 0
         page.links.each do |link|
           next if link.status == :valid
           path, fragment = link.href.split('#')
@@ -317,7 +322,7 @@ EOT
             path_status = :bad_text
             fragment_status = :info_text
           end
-          h4 = body.add_element('h4')
+          body.add_element('h4')
           data = [
             {'Path' => :label, path => path_status},
             {'Fragment' => :label, fragment => fragment_status},
@@ -340,6 +345,43 @@ EOT
     end
   end
 
+  def insert_main_headers(table)
+    tr = table.add_element('tr')
+    tr.add_attribute('class', CSS_CLASSES[:table_header])
+    th = tr.add_element('th')
+    th.text = 'Page'
+    th.add_attribute('rowspan', '3')
+    th = tr.add_element('th')
+    th.text = 'Onsite'
+    th.add_attribute('colspan', '3')
+    th = tr.add_element('th')
+    th.text = 'Offsite'
+    th.add_attribute('colspan', '3')
+    tr = table.add_element('tr')
+    tr.add_attribute('class', CSS_CLASSES[:table_header])
+    th = tr.add_element('th')
+    th.add_attribute('rowspan', '2')
+    th.text = 'Links'
+    th = tr.add_element('th')
+    th.add_attribute('colspan', '2')
+    th.text = 'Not Found'
+    th = tr.add_element('th')
+    th.add_attribute('rowspan', '2')
+    th.text = 'Links'
+    th = tr.add_element('th')
+    th.add_attribute('colspan', '2')
+    th.text = 'Not Found'
+    tr = table.add_element('tr')
+    tr.add_attribute('class', CSS_CLASSES[:table_header])
+    th = tr.add_element('th')
+    th.text = 'Pages'
+    th = tr.add_element('th')
+    th.text = 'Fragments'
+    th = tr.add_element('th')
+    th.text = 'Pages'
+    th = tr.add_element('th')
+    th.text = 'Fragments'
+  end
   def add_offsite_paths(body, checker)
     h2 = body.add_element(Element.new('h2'))
     h2.text = "Offsite Pages (#{offsite_paths.size})"

@@ -139,6 +139,81 @@ EOT
     h2.text = "Onsite Pages (#{onsite_paths.size})"
     p = body.add_element('p')
     p.text = 'The large table below lists the pages found in the Ruby documentation.'
+
+    p = body.add_element('p')
+    details = body.add_element('details')
+    summary = details.add_element('summary')
+    summary.text = 'Colors in the table:'
+    p = details.add_element('p')
+    p.text = 'The counts of pages and fragments that were not found are color-coded:'
+    table = details.add_element('table')
+    tr = table.add_element('tr')
+    th = tr.add_element('th')
+    th.text = 'Color'
+    th.add_attribute('class', CSS_CLASSES[:table_header])
+    th = tr.add_element('th')
+    th.text = 'Status'
+    th.add_attribute('class', CSS_CLASSES[:table_header])
+    tr = table.add_element('tr')
+    td = tr.add_element('td')
+    td.text = 'Green'
+    td.add_attribute('class', CSS_CLASSES[:good_text])
+    td = tr.add_element('td')
+    td.text = 'All linked pages or fragments were found.'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+    tr = table.add_element('tr')
+    td = tr.add_element('td')
+    td.text = 'Red'
+    td.add_attribute('class', CSS_CLASSES[:bad_text])
+    td = tr.add_element('td')
+    td.text = 'Some linked pages or onsite fragments were not found.'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+    tr = table.add_element('tr')
+    td = tr.add_element('td')
+    td.text = 'Yellow'
+    td.add_attribute('class', CSS_CLASSES[:iffy_text])
+    td = tr.add_element('td')
+    td.text = 'Some offsite fragments were not found.'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+    tr = table.add_element('tr')
+    td = tr.add_element('td')
+    td.text = 'Gray'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+    td = tr.add_element('td')
+    td.text = 'The linked pages and fragments were not checked.'
+    td.add_attribute('class', CSS_CLASSES[:info_text])
+
+    p = details.add_element('p')
+    p.text = 'About fragments that were not found:'
+    ul = details.add_element('ul')
+    li = ul.add_element('li')
+    li.text = <<EOT
+An onsite fragment that was not found is shown as red (a definite error)
+because every onsite fragment should be found.
+(After all, we at Ruby own both the linking page and the linked page.)
+EOT
+    li = ul.add_element('li')
+    li.text = <<EOT
+An offsite fragment that was not found is shown as yellow (a possible error)
+because some fragment targets on offsite pages may not be found by the link checker.
+(It can be complicated.)
+EOT
+
+    p = details.add_element('p')
+    p.text = 'About pages and fragments that were not checked:'
+    ul = details.add_element('ul')
+    li = ul.add_element('li')
+    li.text = <<EOT
+By default, a link is not checked if it is on a historical NEWS page.
+This is because the Ruby team has determined that such a page should not be modified.
+EOT
+    li = ul.add_element('li')
+    li.text = <<EOT
+By default, a link fragment is not checked if it is on a GitHub page,
+and is a line-number fragment (such as 'L12-L41').
+This is because there is no such identifier on the GitHub page.
+EOT
+
     p = body.add_element('p')
     p.text = 'The table columns:'
     ul0 = body.add_element('ul')
@@ -196,61 +271,6 @@ EOT
     b = li.add_element('b')
     b.text = 'Fragments:'
     li.text = 'Count of offsite links whose fragments are unverified.'
-
-    p = body.add_element('p')
-    p.text = 'Colors in the table:'
-    table = body.add_element('table')
-    tr = table.add_element('tr')
-    th = tr.add_element('th')
-    th.text = 'Color'
-    th.add_attribute('class', CSS_CLASSES[:table_header])
-    th = tr.add_element('th')
-    th.text = 'Status'
-    th.add_attribute('class', CSS_CLASSES[:table_header])
-    tr = table.add_element('tr')
-    td = tr.add_element('td')
-    td.text = 'Green'
-    td.add_attribute('class', CSS_CLASSES[:good_text])
-    td = tr.add_element('td')
-    td.text = 'All linked pages or fragments were found.'
-    td.add_attribute('class', CSS_CLASSES[:info_text])
-    tr = table.add_element('tr')
-    td = tr.add_element('td')
-    td.text = 'Red'
-    td.add_attribute('class', CSS_CLASSES[:bad_text])
-    td = tr.add_element('td')
-    td.text = 'Some linked pages or onsite fragments were not found.'
-    td.add_attribute('class', CSS_CLASSES[:info_text])
-    tr = table.add_element('tr')
-    td = tr.add_element('td')
-    td.text = 'Yellow'
-    td.add_attribute('class', CSS_CLASSES[:iffy_text])
-    td = tr.add_element('td')
-    td.text = 'Some offsite fragments were not found.'
-    td.add_attribute('class', CSS_CLASSES[:info_text])
-    tr = table.add_element('tr')
-    td = tr.add_element('td')
-    td.text = 'Gray'
-    td.add_attribute('class', CSS_CLASSES[:info_text])
-    td = tr.add_element('td')
-    td.text = 'The linked pages and fragments were not checked.'
-    td.add_attribute('class', CSS_CLASSES[:info_text])
-
-    p = body.add_element('p')
-    p.text = 'About fragments that were not found:'
-    ul = body.add_element('ul')
-    li = ul.add_element('li')
-    li.text = <<EOT
-An onsite fragment that was not found is shown as red (a definite error)
-because every onsite fragment should be found.
-(After all, we at Ruby own both the linking page and the linked page.)
-EOT
-    li = ul.add_element('li')
-    li.text = <<EOT
-An offsite fragment that was not found is shown as yellow (a possible error)
-because some fragment targets on offsite pages may not be found by the link checker.
-(It can be complicated.)'
-EOT
 
     p = body.add_element('p')
     p.text = 'The Ruby documentation pages:'

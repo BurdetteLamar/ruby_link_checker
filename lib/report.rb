@@ -400,7 +400,6 @@ EOT
             path_status = :bad_text
             fragment_status = :info_text
           end
-          body.add_element('h4')
           data = [
             {'Path' => :label, path => path_status},
             {'Fragment' => :label, fragment => fragment_status},
@@ -411,12 +410,14 @@ EOT
         end
       end
       page.exceptions.each do |exception|
-        ul = body.add_element('ul')
-        %i[event argname argvalue class_name message].each do |method|
-          value = exception.send(method)
-          li = ul.add_element('li')
-          li.text = "#{method}: #{value}"
-        end
+        data = [
+          {'Event' => :label, exception.event => :bad_text},
+          {'Arg Name' => :label, exception.argname => :info_text},
+          {'Arg Value' => :label, exception.argvalue => :info_text},
+          {'Class Name' => :label, exception.class_name => :info_text},
+          {'Message' => :label, exception.message => :info_text},
+        ]
+        table2(body, data, "#{path}-exception", 'Exception')
       end
 
       body.add_element(Element.new('p'))

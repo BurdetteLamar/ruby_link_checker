@@ -141,6 +141,8 @@ EOT
     p.text = 'The large table below lists the pages found in the Ruby documentation.'
 
     p = body.add_element('p')
+    p.text = 'Details about the table:'
+
     details = body.add_element('details')
     summary = details.add_element('summary')
     summary.text = 'Colors in the table:'
@@ -215,8 +217,10 @@ This is because there is no such identifier on the GitHub page.
 EOT
 
     p = body.add_element('p')
-    p.text = 'The table columns:'
-    ul0 = body.add_element('ul')
+    details = body.add_element('details')
+    summary = details.add_element('summary')
+    summary.text = 'Columns in the table:'
+    ul0 = details.add_element('ul')
     li = ul0.add_element('li')
     b = li.add_element('b')
     b.text = 'Path:'

@@ -14,26 +14,29 @@ class Report
 .number  { text-align: right }
 .header  { text-align: center }
 
-.good    { color: rgb(  0,  97,   0); background-color: rgb(198, 239, 206) } /* Green */
-.iffy    { color: rgb(156, 101,   0); background-color: rgb(255, 235, 156) } /* Yellow */
-.bad     { color: rgb(156,   0,   6); background-color: rgb(255, 199, 206) } /* Redd */
-.info    { color: rgb(  0,   0,   0); background-color: rgb(217, 217, 214) } /* Gray */
-.header  { color: rgb(255, 255, 255); background-color: rgb(  0,   0,   0) } /* White on black */
+.good      { color: rgb(  0,  97,   0); background-color: rgb(198, 239, 206) } /* Green */
+.iffy      { color: rgb(156, 101,   0); background-color: rgb(255, 235, 156) } /* Yellow */
+.bad       { color: rgb(156,   0,   6); background-color: rgb(255, 199, 206) } /* Red */
+.unchecked { color: rgb(  0,   0, 255); background-color: rgb(135, 206, 250) } /* Blue */
+.info      { color: rgb(  0,   0,   0); background-color: rgb(217, 217, 214) } /* Gray */
+.header    { color: rgb(255, 255, 255); background-color: rgb(  0,   0,   0) } /* White on black */
 EOT
 
   CSS_CLASSES = {
     label:        'text info',
     table_header: 'header',
 
-    good_text:  'data text good',
-    iffy_text:  'data text iffy',
-    bad_text:   'data text bad',
-    info_text:  'data text info',
+    good_text:      'data text good',
+    iffy_text:      'data text iffy',
+    bad_text:       'data text bad',
+    unchecked_text: 'data text unchecked',
+    info_text:      'data text info',
 
-    good_count: 'data number good',
-    iffy_count: 'data number iffy',
-    bad_count:  'data number bad',
-    info_count: 'data number info',
+    good_count:      'data number good',
+    iffy_count:      'data number iffy',
+    bad_count:       'data number bad',
+    unchecked_count: 'data number unchecked',
+    info_count:      'data number info',
   }
 
   attr_accessor :onsite_paths, :offsite_paths, :paths
@@ -179,8 +182,8 @@ EOT
     td.add_attribute('class', CSS_CLASSES[:info_text])
     tr = table.add_element('tr')
     td = tr.add_element('td')
-    td.text = 'Gray'
-    td.add_attribute('class', CSS_CLASSES[:info_text])
+    td.text = 'Blue'
+    td.add_attribute('class', CSS_CLASSES[:unchecked_text])
     td = tr.add_element('td')
     td.text = 'The linked pages and fragments were not checked.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
@@ -325,7 +328,7 @@ EOT
           td.text = value
           td.add_attribute('align', 'right')
           if suppressible_news?(path, checker)
-            cell_class = :info_count
+            cell_class = :unchecked_count
           else
             cell_class = onsite_page_not_found_links.empty? ? :good_count : :bad_count
           end
@@ -334,7 +337,7 @@ EOT
           td.text = value
           td.add_attribute('align', 'right')
           if suppressible_news?(path, checker)
-            cell_class = :info_count
+            cell_class = :unchecked_count
           else
             cell_class = onsite_fragment_not_found_links.empty? ? :good_count : :bad_count
           end
@@ -346,7 +349,7 @@ EOT
           td.text = value
           td.add_attribute('align', 'right')
           if suppressible_news?(path, checker)
-            cell_class = :info_count
+            cell_class = :unchecked_count
           else
             cell_class = offsite_page_not_found_links.empty? ? :good_count : :bad_count
           end
@@ -355,7 +358,7 @@ EOT
           td.text = value
           td.add_attribute('align', 'right')
           if suppressible_news?(path, checker)
-            cell_class = :info_count
+            cell_class = :unchecked_count
           else
             cell_class = offsite_fragment_not_found_links.empty? ? :good_count : :iffy_count
           end

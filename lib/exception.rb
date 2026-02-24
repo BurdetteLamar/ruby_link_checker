@@ -1,19 +1,20 @@
 class RubyLinkCheckerException < Exception
 
-  attr_accessor :message, :argname, :argvalue, :exception
+  attr_accessor :event, :argname, :argvalue, :class_name, :message
 
-  def initialize(message, argname, argvalue, exception)
+  def initialize(event, argname, argvalue, class_name, message)
     super(message)
-    self.message = message
+    self.event = event
     self.argname = argname
     self.argvalue = argvalue
-    self.exception = exception
+    self.class_name = class_name
+    self.message = message
   end
 
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
-      'a'             => [ message, argname, argvalue, exception ],
+      'a'             => [ event, argname, argvalue, class_name, message ],
     }.to_json(*args)
   end
 

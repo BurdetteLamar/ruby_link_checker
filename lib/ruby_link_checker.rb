@@ -18,6 +18,8 @@ require_relative 'report'
 #   - Report URL parsing exceptions.
 #   - Report REXML parsing exceptions.
 # - RubyLinkChecker:
+#   - Check up on rescued exceptions.
+#   - Verify Github lineno fragments.
 #   - On-site page: gather ids only if fragments cited.
 #   - Off-site page: fetch and gather ids only if fragments cited.
 #   - Correctly handle links in subclasses.

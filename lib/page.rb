@@ -49,10 +49,10 @@ class Page
           end
     # Parse the url.
     begin
-      uri = URI(url)
+      uri = URI.parse(url)
     rescue => x
-      message = "URI(url) failed for #{url}."
-      exception = URIParseException.new(message, 'url', url, x)
+      event = "URI(url) failed."
+      exception = URIParseException.new(event, 'url', url, x.class.name, x.message)
       exceptions << exception
     end
     # Get the response.
@@ -60,8 +60,8 @@ class Page
       response =  Net::HTTP.get_response(uri)
       self.found = true
     rescue => x
-      message = "Net::HTTP.get_response(uri) failed for #{uri}."
-      exception = HTTPResponseException.new(message, 'uri', uri, x)
+      event = "Net::HTTP.get_response(uri) failed."
+      exception = HTTPResponseException.new(event, 'uri', uri, x.class.name, x.message)
       exceptions << exception
     end
     # Don't gather links if bad code, or not html, or offsite.
@@ -123,8 +123,8 @@ class Page
             links.push(link)
           end
         rescue REXML::ParseException => x
-          message = "REXML::Document.new(anchor) failed for #{anchor}."
-          exception = AnchorParseException.new(message, 'anchor', anchor, x)
+          event = "REXML::Document.new(anchor) failed."
+          exception = AnchorParseException.new(event, 'anchor', anchor, x.class.name, x.message)
           exceptions << exception
         end
         snippet = ''

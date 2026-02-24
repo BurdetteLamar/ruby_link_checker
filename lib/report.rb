@@ -164,14 +164,14 @@ EOT
     td.text = 'Green'
     td.add_attribute('class', CSS_CLASSES[:good_text])
     td = tr.add_element('td')
-    td.text = 'All linked pages or fragments were found.'
+    td.text = 'No unverified links; no exceptions.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     tr = table.add_element('tr')
     td = tr.add_element('td')
     td.text = 'Red'
     td.add_attribute('class', CSS_CLASSES[:bad_text])
     td = tr.add_element('td')
-    td.text = 'Some linked pages or onsite fragments were not found.'
+    td.text = 'Some unverified links or exceptions.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     tr = table.add_element('tr')
     td = tr.add_element('td')
@@ -185,7 +185,7 @@ EOT
     td.text = 'Blue'
     td.add_attribute('class', CSS_CLASSES[:unchecked_text])
     td = tr.add_element('td')
-    td.text = 'The linked pages and fragments were not checked.'
+    td.text = 'The links were not checked; any exceptions were ignored:.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
 
     p = details.add_element('p')
@@ -306,6 +306,7 @@ EOT
         path,
         onsite_links.size, onsite_page_not_found_links.size, onsite_fragment_not_found_links.size,
         offsite_links.size, offsite_page_not_found_links.size, offsite_fragment_not_found_links.size,
+        page.exceptions.size,
       ]
       break_count =
         onsite_page_not_found_links.size + onsite_fragment_not_found_links.size +
@@ -314,7 +315,7 @@ EOT
         td = tr.add_element('td')
         case i
         when 0 # Page column.
-          if (break_count == 0) || suppressible_news?(path, checker)
+          if ((break_count == 0) && (page.exceptions == 0)) || suppressible_news?(path, checker)
             td.text = value
           else
             a = td.add_element('a')
@@ -363,7 +364,15 @@ EOT
             cell_class = offsite_fragment_not_found_links.empty? ? :good_count : :iffy_count
           end
           td.add_attribute('class', CSS_CLASSES[cell_class])
-
+          when 7 # Exceptions column.
+            td.text = value
+            td.add_attribute('align', 'right')
+            if suppressible_news?(path, checker)
+              cell_class = :unchecked_count
+            else
+              cell_class = (value == 0) ? :good_count : :bad_count
+            end
+            td.add_attribute('class', CSS_CLASSES[cell_class])
         end
       end
       next if (break_count == 0) && page.exceptions.empty?
@@ -403,7 +412,7 @@ EOT
       end
       page.exceptions.each do |exception|
         ul = body.add_element('ul')
-        %i[message argname argvalue exception].each do |method|
+        %i[event argname argvalue class_name message].each do |method|
           value = exception.send(method)
           li = ul.add_element('li')
           li.text = "#{method}: #{value}"
@@ -418,7 +427,7 @@ EOT
     tr = table.add_element('tr')
     tr.add_attribute('class', CSS_CLASSES[:table_header])
     th = tr.add_element('th')
-    th.text = 'Page'
+    th.text = 'Path'
     th.add_attribute('rowspan', '3')
     th = tr.add_element('th')
     th.text = 'Onsite'
@@ -426,6 +435,9 @@ EOT
     th = tr.add_element('th')
     th.text = 'Offsite'
     th.add_attribute('colspan', '3')
+    th = tr.add_element('th')
+    th.text = 'Exceptions'
+    th.add_attribute('rowspan', '3')
     tr = table.add_element('tr')
     tr.add_attribute('class', CSS_CLASSES[:table_header])
     th = tr.add_element('th')

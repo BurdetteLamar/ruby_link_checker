@@ -411,7 +411,7 @@ EOT
       end
       page.exceptions.each do |exception|
         data = [
-          {'Event' => :label, exception.event => :bad_text},
+          {'Event' => :label, exception.description => :bad_text},
           {'Arg Name' => :label, exception.argname => :info_text},
           {'Arg Value' => :label, exception.argvalue => :info_text},
           {'Class Name' => :label, exception.class_name => :info_text},

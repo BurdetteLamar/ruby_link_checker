@@ -387,14 +387,16 @@ EOT
         page.links.each do |link|
           next if link.status == :valid
           path, fragment = link.href.split('#')
-          if path && path.match('/github.com/') && path.match('/blob/')
-            next if fragment&.match(/^L\d+/) &&
-                    !checker.options[:github_lines]
-          end
           if checker.paths[path]
             error = 'Fragment not found'
             path_status = :good_text
-            fragment_status =  offsite_paths[path] ? :iffy_text : :bad_text
+            if onsite_paths[path]
+              fragment_status = :bad_text
+            elsif github_lines_fragment?(path, fragment)
+              fragment_status = checker.options[:github_lines] ? :bad_text : :unchecked_text
+            else
+              fragment_status = :bad_text
+            end
           else
             error = 'Path Not Found'
             path_status = :bad_text
@@ -422,6 +424,13 @@ EOT
 
       body.add_element(Element.new('p'))
     end
+  end
+
+  def github_lines_fragment?(path, fragment)
+    path &&
+      path.match('/github.com/') &&
+      path.match('/blob/') &&
+      fragment&.match(/^L\d+/)
   end
 
   def insert_main_headers(table)

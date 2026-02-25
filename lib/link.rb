@@ -1,16 +1,17 @@
 class Link
 
-  attr_accessor :dirname, :lineno, :href, :text, :status
+  attr_accessor :path, :lineno, :href, :text, :dirname, :status
 
-  def initialize(page_path, lineno, href, text)
+  def initialize(path, lineno, href, text)
+    self.path = path
     self.lineno = lineno
+    self.href = href
     self.text = text.nil? ? '' : text.strip
-    dirname = File.dirname(page_path)
+    dirname = File.dirname(path)
     while href.start_with?('../') do
       href.sub!('../', '')
       dirname = File.dirname(dirname)
     end
-    self.href = href
     self.dirname = dirname
     self.status = :unknown
   end
@@ -18,7 +19,7 @@ class Link
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
-      'a'             => [ dirname, lineno, href, text ]
+      'a'             => [ path, lineno, href, text ]
     }.to_json(*args)
   end
 

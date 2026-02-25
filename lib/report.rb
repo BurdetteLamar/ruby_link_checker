@@ -315,7 +315,7 @@ EOT
         td = tr.add_element('td')
         case i
         when 0 # Page column.
-          if ((break_count == 0) && (page.exceptions == 0)) || suppressible_news?(path, checker)
+          if ((break_count == 0) && (page.exceptions.empty?)) || suppressible_news?(path, checker)
             td.text = value
           else
             a = td.add_element('a')

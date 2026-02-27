@@ -126,13 +126,15 @@ EOT
         end
       end
     end
+    broken_path_status = broken_path_count > 0 ? :bad_count : :good_count
+    broken_fragment_status = broken_fragment_count > 0 ? :bad_count : :good_count
     data = [
       {'Onsite Pages' => :label, onsite_paths.size => :info_count},
       {'Offsite Pages' => :label, offsite_paths.size => :info_count},
       {'Onsite Links' => :label, onsite_link_count => :info_count},
       {'Offsite Links' => :label, offsite_link_count => :info_count},
-      {'Pages Not Found' => :label, broken_path_count => :bad_count},
-      {'Fragments Not Found' => :label, broken_fragment_count => :iffy_count},
+      {'Pages Not Found' => :label, broken_path_count => broken_path_status},
+      {'Fragments Not Found' => :label, broken_fragment_count => broken_fragment_status},
     ]
     table2(body, data, 'summary', 'Pages and Links')
   end

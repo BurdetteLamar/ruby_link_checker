@@ -17,6 +17,8 @@ require_relative 'report'
 #   - Open report in browser (all platforms).
 #   - Report URL parsing exceptions.
 #   - Report REXML parsing exceptions.
+#   - Report breaks in NEWS, but not as errors.
+#   - Report page not found as broken link!!!
 # - RubyLinkChecker:
 #   - Check up on rescued exceptions.
 #   - Verify Github lineno fragments.

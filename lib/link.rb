@@ -1,19 +1,15 @@
 class Link
 
-  attr_accessor :page_path, :lineno, :href, :text, :dirname, :status
+  attr_accessor :page_path, :lineno, :href, :text, :dirname, :status, :path, :fragment
 
   def initialize(page_path, lineno, href, text)
     self.page_path = page_path
     self.lineno = lineno
     self.href = href
     self.text = text.nil? ? '' : text.strip
-    dirname = File.dirname(page_path)
-    while href.start_with?('../') do
-      href.sub!('../', '')
-      dirname = File.dirname(dirname)
-    end
-    self.dirname = dirname
+    self.dirname = File.dirname(page_path)
     self.status = :unknown
+    self.path, self.fragment = self.href.split('#')
   end
 
   def conditioned_path

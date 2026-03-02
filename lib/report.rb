@@ -569,6 +569,7 @@ EOT
           else
             link.status = :fragment_not_found
           end
+          link.status = :valid
         elsif fragment.nil?
           # Path only.
           href = link.href.sub(%r[^\./], '').sub(%r[/$], '')
@@ -577,6 +578,7 @@ EOT
           else
             link.status = :path_not_found
           end
+          link.status = :valid
         else
           # Both path and fragment.
           target_page = paths[path]
@@ -587,6 +589,7 @@ EOT
           else
             link.status = :fragment_not_found
           end
+          link.status = :valid
         end
       end
     end

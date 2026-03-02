@@ -1,13 +1,13 @@
 class Link
 
-  attr_accessor :path, :lineno, :href, :text, :dirname, :status
+  attr_accessor :page_path, :lineno, :href, :text, :dirname, :status
 
-  def initialize(path, lineno, href, text)
-    self.path = path
+  def initialize(page_path, lineno, href, text)
+    self.page_path = page_path
     self.lineno = lineno
     self.href = href
     self.text = text.nil? ? '' : text.strip
-    dirname = File.dirname(path)
+    dirname = File.dirname(page_path)
     while href.start_with?('../') do
       href.sub!('../', '')
       dirname = File.dirname(dirname)
@@ -16,10 +16,14 @@ class Link
     self.status = :unknown
   end
 
+  def conditioned_path
+
+  end
+
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
-      'a'             => [ path, lineno, href, text ]
+      'a'             => [ page_path, lineno, href, text ]
     }.to_json(*args)
   end
 

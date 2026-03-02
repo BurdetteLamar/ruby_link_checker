@@ -99,8 +99,7 @@ class RubyLinkChecker
 
   # Returns whether the path is onsite.
   def self.onsite?(path)
-    potential_scheme = path.match(/^\w*/).to_s
-    !SchemeList.include?(potential_scheme)
+    !path.match(SchemeRegexp)
   end
 
   def progress(message)

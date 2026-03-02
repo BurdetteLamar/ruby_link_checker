@@ -2,6 +2,7 @@ require 'net/http'
 require 'json'
 require 'json/add/time'
 require 'fileutils'
+require 'pathname'
 
 require_relative 'page'
 require_relative 'link'
@@ -73,6 +74,8 @@ class RubyLinkChecker
         if RubyLinkChecker.onsite?(_path) && dirname != '.'
           _path = File.join(dirname, _path)
         end
+        # Pathname.cleanpath does not handle HTTP schemes well.
+        _path = Pathname.new(_path).cleanpath.to_s if RubyLinkChecker.onsite?(_path)
         # Skip if already done or already queued.
         next if paths.include?(_path)
         next if paths_queue.include?(_path)
@@ -96,12 +99,8 @@ class RubyLinkChecker
 
   # Returns whether the path is onsite.
   def self.onsite?(path)
-    return true if path == ''
-    return true if path.start_with?('./')
-    return true if path.start_with?('#')
     potential_scheme = path.match(/^\w*/).to_s
-    return false if SchemeList.include?(potential_scheme)
-    path.match(/^[a-zA-Z]/) ? true : false
+    !SchemeList.include?(potential_scheme)
   end
 
   def progress(message)

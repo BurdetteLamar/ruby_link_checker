@@ -1,35 +1,13 @@
 class Page
 
-  attr_accessor :path, :links, :ids, :exceptions, :found, :type
+  attr_accessor :path, :links, :ids, :exceptions, :found
 
-  def initialize(path, links = [], ids = [], exceptions = [], found = false, type = :unknown)
+  def initialize(path, links = [], ids = [], exceptions = [], found = false)
     self.path = path
     self.links = links
     self.ids = ids
     self.exceptions = exceptions
     self.found = found
-    self.type = type == :unknown ? Page.get_type(path) : type
-  end
-
-  def self.get_type(path)
-    case
-    when path.match(RubyLinkChecker::SchemeRegexp)
-      :url
-    when path.start_with?('./')
-      :class
-    when path.start_with?('#')
-      :class
-    when path == ''
-      :page
-    when path.match(/^fatal/)
-      :class
-    when path.match(/^([a-z]|NEWS|README|COPYING|LEGAL)/)
-      :page
-    when path.match(/^[A-Z]/)
-      :class
-    else
-      :page
-    end
   end
 
   def check_page
@@ -162,12 +140,11 @@ class Page
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
-      'a'             => [ path, links, ids, exceptions, found, type]
+      'a'             => [ path, links, ids, exceptions, found]
     }.to_json(*args)
   end
 
   def self.json_create(object)
-    # p object
     new(*object['a'])
   end
 

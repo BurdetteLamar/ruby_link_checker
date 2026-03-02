@@ -559,7 +559,7 @@ EOT
 
   def verify_links
     paths.each_pair do |path, page|
-      next if page.offsite?
+      next unless RubyLinkChecker.onsite?(path)
       page.links.each do |link|
         path, fragment = link.href.split('#')
         if path.nil? || path.empty?

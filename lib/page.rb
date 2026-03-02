@@ -32,14 +32,6 @@ class Page
     end
   end
 
-  def onsite?
-    [:class, :page].include?(type)
-  end
-
-  def offsite?
-    [:url, :unknown].include?(type)
-  end
-
   def check_page
     # Form URL.
     url = if RubyLinkChecker.onsite?(path)

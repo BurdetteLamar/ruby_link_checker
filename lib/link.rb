@@ -12,10 +12,6 @@ class Link
     self.path, self.fragment = self.href.split('#')
   end
 
-  def conditioned_path
-
-  end
-
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,

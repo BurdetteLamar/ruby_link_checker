@@ -566,10 +566,11 @@ EOT
           # Fragment only.
           if page.ids.include?(fragment)
             link.status = :valid
+          elsif fragment.nil?
+            link.status = :path_not_found
           else
             link.status = :fragment_not_found
           end
-          link.status = :valid
         elsif fragment.nil?
           # Path only.
           href = link.href.sub(%r[^\./], '').sub(%r[/$], '')

@@ -561,37 +561,46 @@ EOT
     paths.each_pair do |path, page|
       next unless RubyLinkChecker.onsite?(path)
       page.links.each do |link|
-        path, fragment = link.href.split('#')
-        if path.nil? || path.empty?
-          # Fragment only.
-          if page.ids.include?(fragment)
-            link.status = :valid
-          elsif fragment.nil?
+        link_path, link_fragment = link.href.split('#')
+        link_path = '' if link_path.nil?
+        link_fragment = '' if link_fragment.nil?
+        if link_path.empty?
+          if link_fragment.empty?
             link.status = :path_not_found
+          elsif page.ids.include?(link_fragment)
+            link.status = :valid
           else
             link.status = :fragment_not_found
           end
-        elsif fragment.nil?
-          # Path only.
-          href = link.href.sub(%r[^\./], '').sub(%r[/$], '')
-          if paths.keys.include?(href)
-            link.status = :valid
-          else
-            link.status = :path_not_found
-          end
-          link.status = :valid
         else
-          # Both path and fragment.
-          target_page = paths[path]
-          if target_page.nil?
-            link.status = :path_not_found
-          elsif target_page.ids.include?(fragment)
-            link.status = :valid
-          else
-            link.status = :fragment_not_found
-          end
           link.status = :valid
         end
+
+
+
+        # if path.nil? || path.empty?
+        #   # Fragment only.
+        # elsif fragment.nil?
+        #   # Path only.
+        #   href = link.href.sub(%r[^\./], '').sub(%r[/$], '')
+        #   if paths.keys.include?(href)
+        #     link.status = :valid
+        #   else
+        #     link.status = :path_not_found
+        #   end
+        #   link.status = :valid
+        # else
+        #   # Both path and fragment.
+        #   target_page = paths[path]
+        #   if target_page.nil?
+        #     link.status = :path_not_found
+        #   elsif target_page.ids.include?(fragment)
+        #     link.status = :valid
+        #   else
+        #     link.status = :fragment_not_found
+        #   end
+        #   link.status = :valid
+        # end
       end
     end
   end

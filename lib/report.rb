@@ -561,13 +561,10 @@ EOT
     paths.each_pair do |path, page|
       next unless RubyLinkChecker.onsite?(path)
       page.links.each do |link|
-        link_path, link_fragment = link.href.split('#')
-        link_path = '' if link_path.nil?
-        link_fragment = '' if link_fragment.nil?
-        if link_path.empty?
-          if link_fragment.empty?
+        if link.path.empty?
+          if link.fragment.empty?
             link.status = :path_not_found
-          elsif page.ids.include?(link_fragment)
+          elsif page.ids.include?(link.fragment)
             link.status = :valid
           else
             link.status = :fragment_not_found

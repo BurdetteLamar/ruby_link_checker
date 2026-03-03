@@ -10,6 +10,8 @@ class Link
     self.dirname = File.dirname(page_path)
     self.status = :unknown
     self.path, self.fragment = self.href.split('#')
+    self.path ||= ''
+    self.fragment ||= ''
   end
 
   def to_json(*args)

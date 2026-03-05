@@ -102,6 +102,10 @@ class RubyLinkChecker
     !path.match(SchemeRegexp)
   end
 
+  def self.offsite?(path)
+    !self.onsite?(path)
+  end
+
   def progress(message)
     puts message unless options[:verbosity] == 'quiet'
   end

@@ -43,7 +43,6 @@ EOT
 
   # Create the report for info gathered by the checker.
   def create_report(report_options)
-    start_time = Time.now
     dirpath = './ruby_link_checker'
     recent_dirname = Dir.new(dirpath).entries.last
     stash_filename = 'stash.json'
@@ -569,35 +568,33 @@ EOT
           else
             link.status = :fragment_not_found
           end
-        else
+        else # Link path non-empty.
           link.status = :valid
+          if RubyLinkChecker.offsite?(link.path)
+            link_path = link.path.rstrip('/')
+            linked_page = paths[link_path]
+            if linked_page
+              if linked_page.found
+                link.status = :valid
+              else
+                link.status = :path_not_found
+              end
+            else
+              link.status = :path_not_found
+            end
+          else # Onsite.
+            cleaned_path = link.cleanpath
+            target_page = paths[cleaned_path]
+            if target_page.nil?
+              link.status = :path_not_found
+            elsif link.fragment.empty? || target_page.ids.include?(link.fragment)
+              link.status = :valid
+            else
+              link.status = :fragment_not_found
+              p link.fragment
+            end
+          end
         end
-
-
-
-        # if path.nil? || path.empty?
-        #   # Fragment only.
-        # elsif fragment.nil?
-        #   # Path only.
-        #   href = link.href.sub(%r[^\./], '').sub(%r[/$], '')
-        #   if paths.keys.include?(href)
-        #     link.status = :valid
-        #   else
-        #     link.status = :path_not_found
-        #   end
-        #   link.status = :valid
-        # else
-        #   # Both path and fragment.
-        #   target_page = paths[path]
-        #   if target_page.nil?
-        #     link.status = :path_not_found
-        #   elsif target_page.ids.include?(fragment)
-        #     link.status = :valid
-        #   else
-        #     link.status = :fragment_not_found
-        #   end
-        #   link.status = :valid
-        # end
       end
     end
   end

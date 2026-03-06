@@ -108,7 +108,12 @@ class Page
     anchors = []
     snippet.split(%r[<a ]).each do |s|
       anchor, _ = s.split(%r[</a>])
-      anchors << "<a #{anchor}</a>"
+      if anchor.match(/<img/)
+        # The badge links/images on a few pages have an unclosed img tag.
+        anchors << "<a #{anchor}</img></a>"
+      else
+        anchors << "<a #{anchor}</a>"
+      end
     end
     anchors.shift # First one is junk (from split).
     anchors

@@ -591,7 +591,6 @@ EOT
               link.status = :valid
             else
               link.status = :fragment_not_found
-              p link.fragment
             end
           end
         end

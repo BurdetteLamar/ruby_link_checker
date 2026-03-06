@@ -15,23 +15,18 @@ require_relative 'report'
 # TODO:
 # - Fix verbosity: stdout, levels.
 # - Report:
+#   - Re-structure code, and comment.
 #   - Open report in browser (all platforms).
-#   - Report URL parsing exceptions.
-#   - Report REXML parsing exceptions.
-#   - Report breaks in NEWS, but not as errors.
-#   - Suppress breaks in LEGAL (just as in NEWS); add option to include.
 #   - Separate reports:
 #     - Main report; links to others:
 #       - Onsite pages.
 #       - Breaks by page.
 #       - Offsite pages.
 # - RubyLinkChecker:
-#   - Check up on rescued exceptions.
-#   - Verify Github lineno fragments.
 #   - On-site page: gather ids only if fragments cited.
-#   - Off-site page: fetch and gather ids only if fragments cited.
-#   - Correctly handle links in subclasses.
-#   - Parse images as special cases?
+#   - Off-site page: GET and gather ids only if fragments cited;
+#     otherwise, just HEAD.
+#   - Make a unified links list, to only check a link once.
 
 class RubyLinkChecker
 

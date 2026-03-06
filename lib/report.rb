@@ -43,15 +43,23 @@ EOT
 
   # Create the report for info gathered by the checker.
   def create_report(report_options)
+    # Default dir for stashes and reports.
     dirpath = './ruby_link_checker'
+    # Dirpath to recent stash and report.
     recent_dirname = Dir.new(dirpath).entries.last
+    recent_dirpath = File.join(dirpath, recent_dirname)
+    # Read and parse the stash into a new RubyLinkChecker object.
     stash_filename = 'stash.json'
-    stash_filepath = File.join(dirpath, recent_dirname, stash_filename)
+    stash_filepath = File.join(recent_dirpath, stash_filename)
     json = File.read(stash_filepath)
     checker = JSON.parse(json, create_additions: true)
+    # Merge in the options for reporting (from the CLI).
     checker.options.merge!(report_options)
+    # Put checker paths onto Report object.
     self.paths = checker.paths
+    # Verify links.
     verify_links
+    
     report_filename = 'report.html'
     report_filepath = File.join(dirpath, recent_dirname, report_filename)
     self.onsite_paths = {}

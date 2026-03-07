@@ -98,6 +98,11 @@ EOT
     h1.text = "Ruby Link Checker Report"
     h2 = body.add_element('h2')
     h2.text = 'Generated: ' + Time.now.strftime(TIME_FORMAT)
+    p = body.add_element('p')
+    p.text = <<EOT
+This document contains an assessment of the HTML pages found
+on the official Ruby documentation site.
+EOT
   end
 
   def add_summary(body, checker)
@@ -148,9 +153,9 @@ EOT
 
   def add_onsite_paths(body, checker)
     h2 = body.add_element(Element.new('h2'))
-    h2.text = "Onsite Pages (#{onsite_paths.size})"
+    h2.text = "Onsite Pages"
     p = body.add_element('p')
-    p.text = 'The large table below lists the pages found in the Ruby documentation.'
+    p.text = 'The large table below lists the pages that have unverified links.'
 
     p = body.add_element('p')
     p.text = 'Details about the table:'
@@ -187,28 +192,28 @@ EOT
     td.text = 'Yellow'
     td.add_attribute('class', CSS_CLASSES[:iffy_text])
     td = tr.add_element('td')
-    td.text = 'Some offsite fragments were not found.'
+    td.text = 'Some unverified fragments.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
     tr = table.add_element('tr')
     td = tr.add_element('td')
     td.text = 'Blue'
     td.add_attribute('class', CSS_CLASSES[:unchecked_text])
     td = tr.add_element('td')
-    td.text = 'The links were not checked; any exceptions were ignored:.'
+    td.text = 'Not checked.'
     td.add_attribute('class', CSS_CLASSES[:info_text])
 
     p = details.add_element('p')
-    p.text = 'About fragments that were not found:'
+    p.text = 'About unverified fragments:'
     ul = details.add_element('ul')
     li = ul.add_element('li')
     li.text = <<EOT
-An onsite fragment that was not found is shown as red (a definite error)
-because every onsite fragment should be found.
+An unverified onsite fragment is shown as red (a definite error)
+because its identifier should exist.
 (After all, we at Ruby own both the linking page and the linked page.)
 EOT
     li = ul.add_element('li')
     li.text = <<EOT
-An offsite fragment that was not found is shown as yellow (a possible error)
+An unverified offsite fragment is shown as yellow (a possible error)
 because some fragment targets on offsite pages may not be found by the link checker.
 (It can be complicated.)
 EOT
@@ -287,6 +292,10 @@ EOT
     b = li.add_element('b')
     b.text = 'Fragments:'
     li.text = 'Count of offsite links whose fragments are unverified.'
+    li = ul1.add_element('li')
+    b = li.add_element('b')
+    b.text = 'Exceptions:'
+    li.text = 'Count of exceptions raised during assessment.'
 
     p = body.add_element('p')
     p.text = 'The Ruby documentation pages:'

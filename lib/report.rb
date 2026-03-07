@@ -84,7 +84,7 @@ EOT
     add_title(body)
     add_summary(body, checker)
     add_onsite_paths(body, checker)
-    add_offsite_paths(body, checker)
+    # add_offsite_paths(body, checker)
 
     f = File.open(report_filepath, 'w')
     doc.write(f, 2)
@@ -294,10 +294,8 @@ EOT
     table = body.add_element('table')
 
 
-    onsite_paths.keys.sort.each_with_index do |path, page_id|
-      if (page_id % 20) == 0
-        insert_main_headers(table)
-      end
+    page_id = 0
+    onsite_paths.keys.sort.each do |path|
       page = onsite_paths[path]
       if path.empty?
         path = RubyLinkChecker::BASE_URL
@@ -308,6 +306,14 @@ EOT
       offsite_links = page.links - onsite_links
       offsite_page_not_found_links = offsite_links.select {|link| link.status == :path_not_found}
       offsite_fragment_not_found_links = offsite_links.select {|link| link.status == :fragment_not_found}
+      break_count =
+        onsite_page_not_found_links.size + onsite_fragment_not_found_links.size +
+        offsite_page_not_found_links.size + offsite_fragment_not_found_links.size
+      next if break_count == 0
+      if (page_id % 20) == 0
+        insert_main_headers(table)
+      end
+      page_id += 1
       tr = table.add_element('tr')
       row_class = :info_text
       tr.add_attribute('class', CSS_CLASSES[row_class])
@@ -317,9 +323,6 @@ EOT
         offsite_links.size, offsite_page_not_found_links.size, offsite_fragment_not_found_links.size,
         page.exceptions.size,
       ]
-      break_count =
-        onsite_page_not_found_links.size + onsite_fragment_not_found_links.size +
-        offsite_page_not_found_links.size + offsite_fragment_not_found_links.size
       values.each_with_index do |value, i|
         td = tr.add_element('td')
         case i
@@ -482,6 +485,7 @@ EOT
     th = tr.add_element('th')
     th.text = 'Fragments'
   end
+
   def add_offsite_paths(body, checker)
     h2 = body.add_element(Element.new('h2'))
     h2.text = "Offsite Pages (#{offsite_paths.size})"

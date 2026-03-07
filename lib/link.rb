@@ -20,8 +20,6 @@ class Link
     _path = path.sub(%r[^\./], '').sub(%r[/$], '')
     return _path if RubyLinkChecker.offsite?(_path)
     return _path if page_path.empty?
-    # updir_count = _path.scan('../').size
-    # return _path if updir_count.zero?
     dirname = File.dirname(page_path)
     _path = File.join(dirname, _path)
     Pathname.new(_path).cleanpath.to_s

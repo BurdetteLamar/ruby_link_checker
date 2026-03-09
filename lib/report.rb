@@ -406,8 +406,9 @@ EOT
         page.links.each do |link|
           next if link.status == :valid
           path, fragment = link.href.split('#')
-          if checker.paths[path]
-            error = 'Fragment not found'
+          target_page = checker.paths[path]
+          if target_page&.found
+            error = 'Fragment Not Found'
             path_status = :good_text
             if onsite_paths[path]
               fragment_status = :bad_text

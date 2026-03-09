@@ -223,7 +223,7 @@ EOT
     ul = details.add_element('ul')
     li = ul.add_element('li')
     li.text = <<EOT
-By default, a link is not checked if it is on a historical NEWS page.
+By default, a link is not checked if it is on a historical LEGAL or NEWS page.
 This is because the Ruby team has determined that such a page should not be modified.
 EOT
     li = ul.add_element('li')
@@ -334,7 +334,7 @@ EOT
         td = tr.add_element('td')
         case i
         when 0 # Page column.
-          if ((break_count == 0) && (page.exceptions.empty?)) || suppressible_news?(path, checker)
+          if ((break_count == 0) && (page.exceptions.empty?)) || suppressible?(path, checker)
             td.text = value
           else
             a = td.add_element('a')
@@ -347,7 +347,7 @@ EOT
         when 2 # Onsite Not Found/Pages column.
           td.text = value
           td.add_attribute('align', 'right')
-          if suppressible_news?(path, checker)
+          if suppressible?(path, checker)
             cell_class = :unchecked_count
           else
             cell_class = onsite_page_not_found_links.empty? ? :good_count : :bad_count
@@ -356,7 +356,7 @@ EOT
         when 3 # Onsite Not Found/Fragments column.
           td.text = value
           td.add_attribute('align', 'right')
-          if suppressible_news?(path, checker)
+          if suppressible?(path, checker)
             cell_class = :unchecked_count
           else
             cell_class = onsite_fragment_not_found_links.empty? ? :good_count : :bad_count
@@ -368,7 +368,7 @@ EOT
         when 5 # Offsite Not Found/Pages column.
           td.text = value
           td.add_attribute('align', 'right')
-          if suppressible_news?(path, checker)
+          if suppressible?(path, checker)
             cell_class = :unchecked_count
           else
             cell_class = offsite_page_not_found_links.empty? ? :good_count : :bad_count
@@ -377,7 +377,7 @@ EOT
         when 6 # Offsite Not Found/Fragments column.
           td.text = value
           td.add_attribute('align', 'right')
-          if suppressible_news?(path, checker)
+          if suppressible?(path, checker)
             cell_class = :unchecked_count
           else
             cell_class = offsite_fragment_not_found_links.empty? ? :good_count : :iffy_count
@@ -386,7 +386,7 @@ EOT
           when 7 # Exceptions column.
             td.text = value
             td.add_attribute('align', 'right')
-            if suppressible_news?(path, checker)
+            if suppressible?(path, checker)
               cell_class = :unchecked_count
             else
               cell_class = (value == 0) ? :good_count : :bad_count
@@ -395,7 +395,7 @@ EOT
         end
       end
       next if (break_count == 0) && page.exceptions.empty?
-      next if suppressible_news?(path, checker)
+      next if suppressible?(path, checker)
       h3 = body.add_element('h3')
       h3.add_attribute('id', page_id)
       a = Element.new('a')
@@ -563,8 +563,9 @@ EOT
     parent.add_element('p')
   end
 
-  def suppressible_news?(path, checker)
-    path.match(/^NEWS/) && !checker.options[:news]
+  def suppressible?(path, checker)
+    (path.match(/^NEWS/) && !checker.options[:news]) ||
+      (path.match(/^LEGAL/) && !checker.options[:legal])
   end
 
   def formatted_times(times)
@@ -577,7 +578,7 @@ EOT
 
   def verify_links
     paths.each_pair do |path, page|
-      next unless RubyLinkChecker.onsite?(path)
+      next if RubyLinkChecker.offsite?(path)
       page.links.each do |link|
         if link.path.empty?
           if link.fragment.empty?
@@ -590,6 +591,7 @@ EOT
         else # Link path non-empty.
           link.status = :valid
           if RubyLinkChecker.offsite?(link.path)
+            next unless link.path.start_with?('http')
             link_path = link.path.rstrip('/')
             linked_page = paths[link_path]
             if linked_page

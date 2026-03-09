@@ -30,6 +30,11 @@ Usage: #{$0} [options]
   because the Ruby core team has determined that the underlying NEWS
   pages are historical in nature and should not be modified.
 
+  Option --legal specifies that paths and fragments
+  on LEGAL pages are to be checked. By default, these are not checked,
+  because the Ruby core team has determined that the underlying LEGAL
+  pages are historical in nature and should not be modified.
+
   Option --github-lines specifies that line-number fragments on GitHub pages
   is to be reported as not-found. By default, this is not reported.
 
@@ -57,6 +62,7 @@ EOF
 options = {
   github_lines: false,
   news: false,
+  legal: false,
   report_only: false,
   open_report: false,
   verbosity: 'minimal',
@@ -67,6 +73,13 @@ parser.on(
   'Report line-number fragments on GitHub pages.',
   )  do |arg|
   options[:github_lines] = true
+end
+
+parser.on(
+  '--legal',
+  'Check paths and fragments on LEGAL pages.',
+  ) do
+  options[:legal] = true
 end
 
 parser.on(
@@ -115,6 +128,7 @@ report_only = options.delete(:report_only)
 open_report = options.delete(:open_report)
 # These options are for reporting only.
 report_options = {
+  :legal => options.delete(:legal),
   :news => options.delete(:news),
   :github_lines => options.delete(:github_lines),
 }

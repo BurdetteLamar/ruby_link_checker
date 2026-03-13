@@ -100,7 +100,7 @@ EOT
     h2.text = 'Generated: ' + Time.now.strftime(TIME_FORMAT)
     p = body.add_element('p')
     p.text = <<EOT
-This document contains an assessment of the HTML pages found
+This document contains an assessment of the links found in HTML pages
 on the official Ruby documentation site.
 EOT
   end
@@ -152,8 +152,9 @@ EOT
   end
 
   def add_onsite_paths(body, checker)
-    h2 = body.add_element(Element.new('h2'))
-    h2.text = "Onsite Pages"
+    h2 = body.add_element('h2')
+    h2.text = 'Onsite Pages with Unverified Links'
+
     p = body.add_element('p')
     p.text = 'The large table below lists the pages that have unverified links.'
 
@@ -295,8 +296,7 @@ EOT
     b.text = 'Exceptions:'
     li.text = 'Count of exceptions raised during assessment.'
 
-    p = body.add_element('p')
-    p.text = 'The Ruby documentation pages:'
+    body.add_element('p')
 
     table = body.add_element('table')
 

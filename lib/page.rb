@@ -11,6 +11,7 @@ class Page
   end
 
   def check_page
+    self.found = false
     # Form URL.
     url = if RubyLinkChecker.onsite?(path)
             File.join(RubyLinkChecker::BASE_URL, path)
@@ -28,7 +29,7 @@ class Page
     # Get the response.
     begin
       response =  Net::HTTP.get_response(uri)
-      self.found = true
+      self.found = true unless code_bad?(response)
     rescue => x
       description = "Net::HTTP.get_response(uri) failed."
       exception = HTTPResponseException.new(description, 'uri', uri, x.class.name, x.message)

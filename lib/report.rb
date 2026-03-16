@@ -590,7 +590,6 @@ EOT
             link.status = :fragment_not_found
           end
         else # Link path non-empty.
-          link.status = :valid
           if RubyLinkChecker.offsite?(link.path)
             next unless link.path.start_with?('http')
             link_path = link.path.rstrip('/')
@@ -607,7 +606,7 @@ EOT
           else # Onsite.
             cleaned_path = link.cleanpath
             target_page = paths[cleaned_path]
-            if target_page.nil?
+            if target_page.nil? || !target_page.found
               link.status = :path_not_found
             elsif link.fragment.empty? || target_page.ids.include?(link.fragment)
               link.status = :valid

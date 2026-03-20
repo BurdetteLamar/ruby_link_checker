@@ -592,8 +592,7 @@ EOT
         else # Link path non-empty.
           if RubyLinkChecker.offsite?(link.path)
             next unless link.path.start_with?('http')
-            link_path = link.path.rstrip('/')
-            linked_page = paths[link_path]
+            linked_page = paths[link.path]
             if linked_page
               if linked_page.found
                 link.status = :valid

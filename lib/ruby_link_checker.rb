@@ -68,7 +68,7 @@ class RubyLinkChecker
       page.links.each do |link|
         href = link.href
         next if href.start_with?('#')
-        _path = href.sub(%r[^\./], '').sub(%r[/$], '')
+        _path = href.sub(%r[^\./], '')
         _path, _ = _path.split('#')
         dirname = link.dirname
         if RubyLinkChecker.onsite?(_path) && dirname != '.'

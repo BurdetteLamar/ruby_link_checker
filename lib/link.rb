@@ -17,7 +17,7 @@ class Link
   end
 
   def cleanpath
-    _path = path.sub(%r[^\./], '').sub(%r[/$], '')
+    _path = path.sub(%r[^\./], '')
     return _path if RubyLinkChecker.offsite?(_path)
     return _path if page_path.empty?
     dirname = File.dirname(page_path)

@@ -1,17 +1,20 @@
 class Page
 
-  attr_accessor :path, :links, :ids, :exceptions, :found
+  attr_accessor :path, :links, :ids, :exceptions, :code
 
-  def initialize(path, links = [], ids = [], exceptions = [], found = false)
+  def initialize(path, links = [], ids = [], exceptions = [], code = nil)
     self.path = path
     self.links = links
     self.ids = ids
     self.exceptions = exceptions
-    self.found = found
+    self.code = code
+  end
+
+  def found
+    !code_bad?(code)
   end
 
   def check_page
-    self.found = false
     # Form URL.
     url = if RubyLinkChecker.onsite?(path)
             File.join(RubyLinkChecker::BASE_URL, path)
@@ -29,14 +32,14 @@ class Page
     # Get the response.
     begin
       response =  Net::HTTP.get_response(uri)
-      self.found = true unless code_bad?(response)
+      self.code = response.code.to_i
     rescue => x
       description = "Net::HTTP.get_response(uri) failed."
       exception = HTTPResponseException.new(description, 'uri', uri, x.class.name, x.message)
       exceptions << exception
     end
     # Don't gather links if bad code, or not html, or offsite.
-    return if code_bad?(response)
+    return if code_bad?(response.code)
     return unless content_type_html?(response)
     # Get the HTML body.
     body = response.body
@@ -46,9 +49,7 @@ class Page
   end
 
   # Returns whether the code is bad (zero or >= 400).
-  def code_bad?(response)
-    return false if response.nil?
-    code = response.code.to_i
+  def code_bad?(code)
     return false if code.nil?
     (code == 0) || (code >= 400)
   end
@@ -146,7 +147,7 @@ class Page
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
-      'a'             => [ path, links, ids, exceptions, found]
+      'a'             => [ path, links, ids, exceptions, code]
     }.to_json(*args)
   end
 

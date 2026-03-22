@@ -7,7 +7,7 @@ class Page
     self.links = links
     self.ids = ids
     self.exceptions = exceptions
-    self.code = code
+    self.code = code.to_i
   end
 
   def found
@@ -39,7 +39,7 @@ class Page
       exceptions << exception
     end
     # Don't gather links if bad code, or not html, or offsite.
-    return if code_bad?(response.code)
+    return if code_bad?(self.code)
     return unless content_type_html?(response)
     # Get the HTML body.
     body = response.body

@@ -423,18 +423,21 @@ EOT
             path_status = :bad_text
             fragment_status = :info_text
           end
-          data = [
-            {'Path' => :label, path => path_status},
-            {'Fragment' => :label, fragment => fragment_status},
-            {'Text' => :label, link.text => :info_text},
-            {'Line Number' => :label, link.lineno => :info_tex},
-          ]
           if target_page
             code = target_page.code
             code_text = "#{code} #{Net::HTTP::STATUS_CODES[code]}"
             code_status = target_page.found ? :good_text : :bad_text
-            data << {'HTTP Status' => :label, code_text => code_status}
+          else
+            code = ''
+            code_status = :info_text
           end
+          data = [
+            {'Path' => :label, path => path_status},
+            {'HTTP Status' => :label, code_text => code_status},
+            {'Fragment' => :label, fragment => fragment_status},
+            {'Text' => :label, link.text => :info_text},
+            {'Line Number' => :label, link.lineno => :info_tex},
+          ]
           table2(body, data, "#{path}-summary", error)
         end
       end

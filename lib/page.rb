@@ -10,10 +10,12 @@ class Page
     self.code = code.to_i
   end
 
+  # Whether the page was found (didn't have a bad HTTP response code).
   def found
     !code_bad?(code)
   end
 
+  # Process the page.
   def check_page
     # Form URL.
     url = if RubyLinkChecker.onsite?(path)
@@ -87,9 +89,11 @@ class Page
           root = doc.root
           href = root.attributes['href']
           text = root.text
+          # May need to get text from first child.
           if text.nil? && root.children.size > 0
             text = root.children[0].text
           end
+          # Not visible on page if no text.
           if text
             link = Link.new(page_path, lineno, href, text)
             links.push(link)
@@ -104,6 +108,7 @@ class Page
     end
   end
 
+  # Get the anchors (a tags) from the snippet.
   def get_anchors(snippet)
     # A 1-line snippet may contain multiple links,
     # and a 1-link snippet may have multiple lines.
@@ -111,9 +116,11 @@ class Page
     snippet.split(%r[<a ]).each do |s|
       anchor, _ = s.split(%r[</a>])
       if anchor.match(/<img/)
-        # The badge links/images on a few pages have an unclosed img tag.
+        # The badge links/images on a few pages have an unclosed img tag;
+        # try to close it, and restore a tag.
         anchors << "<a #{anchor}</img></a>"
       else
+        # Just restore the a tag.
         anchors << "<a #{anchor}</a>"
       end
     end
@@ -121,6 +128,7 @@ class Page
     anchors
   end
 
+  # Gather values of the id and name attributes from the response body.
   def gather_ids(body)
     body.lines.each do |line|
       values = get_attribute_values(line, %w[ id name ])
@@ -130,10 +138,13 @@ class Page
     end
   end
 
-  def get_attribute_values(s, attribute_names)
+  # Get the values of
+  def get_attribute_values(line, attribute_names)
+    # Regexp will look something like /(id|name)="/.
     re = Regexp.new('(' + attribute_names.join('|') + ')="')
+    # Use StringScanner to get the values.
     values = []
-    scanner = StringScanner.new(s)
+    scanner = StringScanner.new(line)
     while (s0 = scanner.check_until(re))
       scanner.pos += s0.length
       if (s1 = scanner.check_until(/"/))

@@ -22,39 +22,6 @@ Usage: #{$0} [options]
   whose name is timestamp-based (e/g/. 2026-02-11-Wed-21.29.00+0000),
   and writes output files stash.json and report.html into that subdirectory.
 
-  Option --verbosity controls the quantity of progress messages to be printed.
-  The default value is 'moderate'; value 'quiet' suppresses progress messages.
-
-  Option --news specifies that paths and fragments
-  on NEWS pages are to be checked. By default, these are not checked,
-  because the Ruby core team has determined that the underlying NEWS
-  pages are historical in nature and should not be modified.
-
-  Option --legal specifies that paths and fragments
-  on LEGAL pages are to be checked. By default, these are not checked,
-  because the Ruby core team has determined that the underlying LEGAL
-  pages are historical in nature and should not be modified.
-
-  Option --github-lines specifies that line-number fragments on GitHub pages
-  is to be reported as not-found. By default, this is not reported.
-
-  Option --help causes the link checker to print its help text, then exit.
-
-  Option --version causes the link checker to print its version, then exit.
-
-  Option --report-only specifies that the documentation on the website
-  is not to be re-read and that a new stash file is not to be written;
-  instead, the report is to be based on the most recent stash file.
-  This may be useful in developing or debugging the reporting code
-  (avoids repeating the long reading and stashing process).
-
-  Option --open-report specifies that the generated HTML report
-  is to be opened in a web browser.
-
-  Option --verbosity may also be useful for development and debugging.
-  Setting the verbosity value to 'debug' tells the link checker to print
-  all its progress messages.
-
 Options
 
 EOF
@@ -69,48 +36,62 @@ options = {
 }
 
 parser.on(
-  '--github-lines',
-  'Report line-number fragments on GitHub pages.',
-  )  do |arg|
-  options[:github_lines] = true
-end
-
-parser.on(
-  '--legal',
-  'Check paths and fragments on LEGAL pages.',
-  ) do
-  options[:legal] = true
-end
-
-parser.on(
-  '--news',
-  'Check paths and fragments on NEWS pages.',
-  ) do
-  options[:news] = true
-end
-
-parser.on(
   '--open-report',
-  'Open the HTML report in a browser.'
+  'Open the generated HTML report in a web browser.'
 ) do
   options[:open_report] = true
 end
 
 parser.on(
   '--report-only',
-  'Read recent stash and write new report;',
-  '    do not re-read Ruby documents or write new stash.'
+  'Create a new HTML report based on the most recent stash file;',
+  '  do not re-read the Ruby documents or write a new stash file.',
+  '  This may be useful when developing or debugging the reporting code',
+  '  (avoids repeating the long reading and stashing process).'
 ) do
   options[:report_only] = true
+end
+
+  parser.on(
+  '--github-lines',
+  'Do not check line-number fragments on GitHub pages (e.g., #L14-L22),',
+  '  because there is no such id on the page (GitHub has special handling).'
+  )  do |arg|
+  options[:github_lines] = true
+  end
+
+parser.on(
+  '--legal',
+  'Check paths and fragments on LEGAL pages.',
+  '  By default, these are reported, but not checked.',
+  '  This is because the Ruby core team has determined',
+  '  that the LEGAL page is historical in nature and should not be modified.'
+  ) do
+  options[:legal] = true
+end
+
+parser.on(
+  '--news',
+  'Check paths and fragments for links on NEWS pages.',
+  '  By default, these are reported, but not checked.',
+  '  This is because the Ruby core team has determined',
+  '  that the NEWS pages are historical in nature and should not be modified.'
+  ) do
+  options[:news] = true
 end
 
 parser.on(
   '--verbosity LEVEL',
   'Set verbosity level to one of:',
-  '    quiet: Print no progress messages.',
-  '    minimal: (default) Print some progress messages',
-  '    debug: Print extensive progress messages.'
+  '  quiet: Print no progress messages.',
+  '  moderate: (default) Print some progress messages',
+  '  debug: Print extensive progress messages.'
 ) do |arg|
+  valid_args = %w[quiet moderate debug]
+  unless valid_args.include?(arg)
+    puts "  Error: --verbosity LEVEL must be one of: #{valid_args.join(', ')}."
+    exit 1
+  end
   options[:verbosity] = arg
 end
 

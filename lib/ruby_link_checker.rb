@@ -14,7 +14,18 @@ require_relative 'report'
 #
 # TODO:
 # - Fix verbosity: stdout, levels.
+# - Profile.
+# - RubyLinkChecker:
+#   - Page getter: fetch from web (given URL) or filetree (given dirpath);
+#     accept as CLI option or via ENV.
+#   - Other options via ENV?
+#   - Initialization file?
+#   - On-site page: gather ids only if fragments cited.
+#   - Off-site page: GET and gather ids only if fragments cited;
+#     otherwise, just HEAD.
+#   - Make a unified links list, to only check a link once.
 # - Report:
+#   - Report target, CLI options, ENV values.
 #   - Re-structure code, and comment.
 #   - Open report in browser (all platforms).
 #   - Separate reports:
@@ -22,11 +33,6 @@ require_relative 'report'
 #       - Onsite pages.
 #       - Breaks by page.
 #       - Offsite pages.
-# - RubyLinkChecker:
-#   - On-site page: gather ids only if fragments cited.
-#   - Off-site page: GET and gather ids only if fragments cited;
-#     otherwise, just HEAD.
-#   - Make a unified links list, to only check a link once.
 
 class RubyLinkChecker
 

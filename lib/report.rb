@@ -104,7 +104,7 @@ EOT
     p = body.add_element('p')
     p.text = <<EOT
 This document contains an assessment of the links found in HTML pages
-on the official Ruby documentation site.
+at the given source, "#{checker.source}".
 EOT
   end
 

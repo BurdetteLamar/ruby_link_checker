@@ -43,15 +43,29 @@ class RubyLinkChecker
   }
 
   # URL for documentation base page.
-  BASE_URL = 'https://docs.ruby-lang.org/en/master'
+  BASE_URL = 'https://docs.ruby-lang.org/en'
 
-  attr_accessor :paths, :times, :options
+  attr_accessor :paths, :times, :options, :source
 
   # Return a new RubyLinkChecker object.
   def initialize(paths = {}, times = {}, options: {})
     self.paths = paths
     self.times = times
     self.options = DEFAULT_OPTIONS.merge(options)
+    self.source = get_source(options[:source])
+  end
+
+  def get_source(source_option)
+    source = case
+             when source_option.nil?
+               File.join(RubyLinkChecker::BASE_URL, 'master')
+             when source_option.start_with?('http')
+               source_option
+             when File.file?(source_option)
+               source_option
+             else
+               File.join(RubyLinkChecker::BASE_URL, source_option)
+             end
   end
 
   def create_stash
@@ -66,8 +80,8 @@ class RubyLinkChecker
       path = paths_queue.shift
       next if paths[path]
       # New page.
-      page = Page.new(path)
-      progress("%4.4d queued:  Dequeueing %s" % [paths_queue.size, path])
+      page = Page.new(source, path)
+      progress(:minimal, "%4.4d queued:  Dequeueing %s" % [paths_queue.size, path])
       page.check_page
       paths[path] = page
       # Queue any new paths.
@@ -86,7 +100,7 @@ class RubyLinkChecker
         next if paths.include?(_path)
         next if paths_queue.include?(_path)
         # Queue it.
-        progress("%4.4d queued:  Queueing %s" % [paths_queue.size, _path])
+        progress(:minimal, "%4.4d queued:  Queueing %s" % [paths_queue.size, _path])
         paths_queue.push(_path)
       end
     end
@@ -100,7 +114,7 @@ class RubyLinkChecker
   end
 
   def create_report(report_options)
-    Report.new.create_report(report_options)
+    Report.new.create_report(self, report_options)
   end
 
   # Returns whether the path is onsite.
@@ -112,7 +126,7 @@ class RubyLinkChecker
     !self.onsite?(path)
   end
 
-  def progress(message)
+  def progress(level, message)
     puts message unless options[:verbosity] == 'quiet'
   end
 

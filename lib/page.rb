@@ -1,8 +1,9 @@
 class Page
 
-  attr_accessor :path, :links, :ids, :exceptions, :code
+  attr_accessor :source, :path, :links, :ids, :exceptions, :code
 
-  def initialize(path, links = [], ids = [], exceptions = [], code = nil)
+  def initialize(source, path, links = [], ids = [], exceptions = [], code = nil)
+    self.source = source
     self.path = path
     self.links = links
     self.ids = ids
@@ -19,7 +20,7 @@ class Page
   def check_page
     # Form URL.
     url = if RubyLinkChecker.onsite?(path)
-            File.join(RubyLinkChecker::BASE_URL, path)
+            File.join(source, path)
           else
             path
           end
@@ -158,7 +159,7 @@ class Page
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
-      'a'             => [ path, links, ids, exceptions, code]
+      'a'             => [ source, path, links, ids, exceptions, code]
     }.to_json(*args)
   end
 

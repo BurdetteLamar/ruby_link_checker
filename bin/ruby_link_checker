@@ -9,7 +9,7 @@ parser.banner = <<-EOF
 
 Usage: #{$0} [options]
 
-  - Reads Ruby HTML documentation found at #{RubyLinkChecker::BASE_URL}.
+  - Reads Ruby HTML documentation found at the given source.
 
   - Writes a JSON "stash" file containing its findings.
   - Writes an HTML report file that lists:
@@ -27,13 +27,29 @@ Options
 EOF
 
 options = {
-  github_lines: false,
-  news: false,
-  legal: false,
-  report_only: false,
+  source: 'master',
   open_report: false,
+  report_only: false,
+  github_lines: false,
+  legal: false,
+  news: false,
   verbosity: 'minimal',
 }
+
+parser.on(
+  '--source=SOURCE',
+  'Specify the location of the documentation to check;',
+  "  defaults to #{RubyLinkChecker::BASE_URL}/master;",
+  '  otherwise must be one of:',
+  '  - Version (e.g., "4.0") of the Ruby documentation to be read;',
+  "    see versions at #{RubyLinkChecker::BASE_URL}.",
+  '    The first page to be read will be',
+  "    #{RubyLinkChecker::BASE_URL}/<version>.",
+  '  - URL of the first page to be read.',
+  '  - File path of the first page to be read.'
+) do |arg|
+  options[:source] = arg
+end
 
 parser.on(
   '--open-report',
@@ -81,7 +97,7 @@ parser.on(
 end
 
 parser.on(
-  '--verbosity LEVEL',
+  '--verbosity=LEVEL',
   'Set verbosity level to one of:',
   '  quiet: Print no progress messages.',
   '  moderate: (default) Print some progress messages',
@@ -113,8 +129,9 @@ report_options = {
   :news => options.delete(:news),
   :github_lines => options.delete(:github_lines),
 }
-# This option is for both stashing and reporting.
+# These options are for both stashing and reporting.
 report_options[:verbosity] = options[:verbosity]
+report_options[:source] = options[:source]
 checker = RubyLinkChecker.new(options: options)
 checker.create_stash unless report_only
 report_filepath = checker.create_report(report_options)

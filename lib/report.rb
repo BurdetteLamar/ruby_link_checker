@@ -40,10 +40,11 @@ EOT
     info_count:      'data number info',
   }
 
-  attr_accessor :onsite_paths, :offsite_paths, :paths
+  attr_accessor :checker, :onsite_paths, :offsite_paths, :paths
 
   # Create the report for info gathered by the checker.
-  def create_report(report_options)
+  def create_report(checker, report_options)
+    self.checker = checker
     # Default dir for stashes and reports.
     dirpath = './ruby_link_checker'
     # Dirpath to recent stash and report.
@@ -52,6 +53,7 @@ EOT
     # Read and parse the stash into a new RubyLinkChecker object.
     stash_filename = 'stash.json'
     stash_filepath = File.join(recent_dirpath, stash_filename)
+    checker.progress(:minimal, "Reading stash file: #{stash_filepath.inspect}")
     json = File.read(stash_filepath)
     checker = JSON.parse(json, create_additions: true)
     # Merge in the options for reporting (from the CLI).
@@ -304,9 +306,10 @@ EOT
 
     page_id = 0
     onsite_paths.keys.sort.each do |path|
+      puts "Reporting #{path.inspect}"
       page = onsite_paths[path]
       if path.empty?
-        path = RubyLinkChecker::BASE_URL
+        path = checker.options[:source]
       end
       onsite_links = page.links.select {|link| RubyLinkChecker.onsite?(link.href) }
       onsite_page_not_found_links = onsite_links.select {|link| link.status == :path_not_found}
@@ -401,7 +404,7 @@ EOT
       h3.add_attribute('id', page_id)
       a = Element.new('a')
       a.text = path
-      a.add_attribute('href', File.join(RubyLinkChecker::BASE_URL, path))
+      a.add_attribute('href', File.join(checker.source, path))
       h3.add_element(a)
       unless break_count == 0
         page.links.each do |link|
@@ -588,8 +591,10 @@ EOT
   end
 
   def verify_links
-    paths.each_pair do |path, page|
+    paths.keys.sort.each do |path|
+      page = paths[path]
       next if RubyLinkChecker.offsite?(path)
+      checker.progress(:minimal, "Verifying links on #{path.inspect}")
       page.links.each do |link|
         if link.path.empty?
           if link.fragment.empty?

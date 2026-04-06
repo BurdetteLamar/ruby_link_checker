@@ -14,16 +14,11 @@ require_relative 'report'
 #
 # TODO:
 # - Fix verbosity: stdout, levels.
-# - Profile.
 # - RubyLinkChecker:
 #   - Page getter: fetch from web (given URL) or filetree (given dirpath);
 #     accept as CLI option or via ENV.
 #   - Other options via ENV?
 #   - Initialization file?
-#   - On-site page: gather ids only if fragments cited.
-#   - Off-site page: GET and gather ids only if fragments cited;
-#     otherwise, just HEAD.
-#   - Make a unified links list, to only check a link once.
 # - Report:
 #   - Report target, CLI options, ENV values.
 #   - Re-structure code, and comment.
@@ -33,7 +28,13 @@ require_relative 'report'
 #       - Onsite pages.
 #       - Breaks by page.
 #       - Offsite pages.
-
+# - Performance optimizations:
+#   - Profile.
+#   - On-site page: gather ids only if fragments cited.
+#   - Off-site page: GET and gather ids only if fragments cited;
+#     otherwise, just HEAD.
+#   - Make a unified links list, to only check a link once.
+#   - Don't use JSON addition for Time; write and read as string.
 class RubyLinkChecker
 
   SchemeList = URI.scheme_list.keys.map {|scheme| scheme.downcase}
@@ -81,7 +82,7 @@ class RubyLinkChecker
       next if paths[path]
       # New page.
       page = Page.new(source, path)
-      progress(:minimal, "%4.4d queued:  Dequeueing %s" % [paths_queue.size, path])
+      progress(:minimal, "%4.4d queued:  Fetching \"%s\"" % [paths_queue.size, path])
       page.check_page
       paths[path] = page
       # Queue any new paths.
@@ -100,7 +101,7 @@ class RubyLinkChecker
         next if paths.include?(_path)
         next if paths_queue.include?(_path)
         # Queue it.
-        progress(:minimal, "%4.4d queued:  Queueing %s" % [paths_queue.size, _path])
+        progress(:minimal, "%4.4d queued:  Queueing \"%s\"" % [paths_queue.size, _path])
         paths_queue.push(_path)
       end
     end

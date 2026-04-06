@@ -583,8 +583,8 @@ EOT
   end
 
   def formatted_times(times)
-    start_time = Time.new(times['start'])
-    end_time = Time.new(times['end'])
+    start_time = times['start']
+    end_time = times['end']
     minutes, seconds = (end_time - start_time).divmod(60)
     elapsed = "%d:%02d" % [minutes, seconds]
     [start_time.strftime(TIME_FORMAT), end_time.strftime(TIME_FORMAT),  elapsed]

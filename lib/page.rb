@@ -1,8 +1,9 @@
 class Page
 
-  attr_accessor :source, :path, :links, :ids, :exceptions, :code
+  attr_accessor :source_type, :source, :path, :links, :ids, :exceptions, :code
 
-  def initialize(source, path, links = [], ids = [], exceptions = [], code = nil)
+  def initialize(source_type, source, path, links = [], ids = [], exceptions = [], code = nil)
+    self.source_type = source_type
     self.source = source
     self.path = path
     self.links = links
@@ -25,34 +26,38 @@ class Page
   end
 
   def get_html(path)
-    # Form URL.
-    url = if RubyLinkChecker.onsite?(path)
-            File.join(source, path)
-          else
-            path
-          end
-    # Parse the url.
-    begin
-      uri = URI.parse(url)
-    rescue => x
-      description = "URI(url) failed."
-      exception = URIParseException.new(description, 'url', url, x.class.name, x.message)
-      exceptions << exception
+    if (source_type == :web) || RubyLinkChecker.offsite?(path)
+      # Form URL.
+      url = if RubyLinkChecker.onsite?(path)
+              File.join(source, path)
+            else
+              path
+            end
+      # Parse the url.
+      begin
+        uri = URI.parse(url)
+      rescue => x
+        description = "URI(url) failed."
+        exception = URIParseException.new(description, 'url', url, x.class.name, x.message)
+        exceptions << exception
+      end
+      # Get the response.
+      begin
+        response =  Net::HTTP.get_response(uri)
+        self.code = response.code.to_i
+      rescue => x
+        description = "Net::HTTP.get_response(uri) failed."
+        exception = HTTPResponseException.new(description, 'uri', uri, x.class.name, x.message)
+        exceptions << exception
+      end
+      # Return empty string if bad code, or not html, or offsite.
+      return '' if code_bad?(self.code)
+      return '' unless content_type_html?(response)
+      # Get the HTML.
+      response.body
+    else
+      fail 'file'
     end
-    # Get the response.
-    begin
-      response =  Net::HTTP.get_response(uri)
-      self.code = response.code.to_i
-    rescue => x
-      description = "Net::HTTP.get_response(uri) failed."
-      exception = HTTPResponseException.new(description, 'uri', uri, x.class.name, x.message)
-      exceptions << exception
-    end
-    # Return empty string if bad code, or not html, or offsite.
-    return '' if code_bad?(self.code)
-    return '' unless content_type_html?(response)
-    # Get the HTML.
-    response.body
   end
 
   # Returns whether the code is bad (zero or >= 400).
@@ -163,7 +168,7 @@ class Page
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
-      'a'             => [ source, path, links, ids, exceptions, code]
+      'a'             => [ source_type, source, path, links, ids, exceptions, code]
     }.to_json(*args)
   end
 

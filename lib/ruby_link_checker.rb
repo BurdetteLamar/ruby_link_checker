@@ -46,26 +46,26 @@ class RubyLinkChecker
   # URL for documentation base page.
   BASE_URL = 'https://docs.ruby-lang.org/en'
 
-  attr_accessor :paths, :times, :options, :source
+  attr_accessor :paths, :times, :options, :source_type, :source
 
   # Return a new RubyLinkChecker object.
   def initialize(paths = {}, times = {}, options: {})
     self.paths = paths
     self.times = times
     self.options = DEFAULT_OPTIONS.merge(options)
-    self.source = get_source(options[:source])
+    self.source_type, self.source = get_source(options[:source])
   end
 
   def get_source(source_option)
     source = case
              when source_option.nil?
-               File.join(RubyLinkChecker::BASE_URL, 'master')
+               [:web, File.join(RubyLinkChecker::BASE_URL, 'master')]
              when source_option.start_with?('http')
-               source_option
+               [:web, source_option]
              when File.file?(source_option)
-               source_option
+               [:file, source_option]
              else
-               File.join(RubyLinkChecker::BASE_URL, source_option)
+               [:web, File.join(RubyLinkChecker::BASE_URL, source_option)]
              end
   end
 
@@ -81,7 +81,7 @@ class RubyLinkChecker
       path = paths_queue.shift
       next if paths[path]
       # New page.
-      page = Page.new(source, path)
+      page = Page.new(source_type, source, path)
       progress(:minimal, "%4.4d queued:  Fetching \"%s\"" % [paths_queue.size, path])
       page.check_page
       paths[path] = page

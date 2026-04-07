@@ -18,6 +18,13 @@ class Page
 
   # Process the page.
   def check_page
+    html = get_html(path)
+    gather_ids(html)
+    return unless RubyLinkChecker.onsite?(path)
+    gather_links(path, html)
+  end
+
+  def get_html(path)
     # Form URL.
     url = if RubyLinkChecker.onsite?(path)
             File.join(source, path)
@@ -41,14 +48,11 @@ class Page
       exception = HTTPResponseException.new(description, 'uri', uri, x.class.name, x.message)
       exceptions << exception
     end
-    # Don't gather links if bad code, or not html, or offsite.
-    return if code_bad?(self.code)
-    return unless content_type_html?(response)
+    # Return empty string if bad code, or not html, or offsite.
+    return '' if code_bad?(self.code)
+    return '' unless content_type_html?(response)
     # Get the HTML.
-    html = response.body
-    gather_ids(html)
-    return unless RubyLinkChecker.onsite?(path)
-    gather_links(path, html)
+    response.body
   end
 
   # Returns whether the code is bad (zero or >= 400).

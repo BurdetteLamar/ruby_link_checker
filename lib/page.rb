@@ -44,11 +44,11 @@ class Page
     # Don't gather links if bad code, or not html, or offsite.
     return if code_bad?(self.code)
     return unless content_type_html?(response)
-    # Get the HTML text.
-    text = response.body
-    gather_ids(text)
+    # Get the HTML.
+    html = response.body
+    gather_ids(html)
     return unless RubyLinkChecker.onsite?(path)
-    gather_links(path, text)
+    gather_links(path, html)
   end
 
   # Returns whether the code is bad (zero or >= 400).
@@ -64,9 +64,9 @@ class Page
     response['Content-Type'].match('html')
   end
 
-  # Gathers links from the page text.
-  def gather_links(page_path, text)
-    lines = text.lines
+  # Gathers links from the HTML.
+  def gather_links(page_path, html)
+    lines = html.lines
     # Some links are multi-line; i.e., '<a ... >' and '</a>' are not on the same line.
     # Therefore we capture a possibly multi-line snippet containing both.
     snippet = ''
@@ -129,9 +129,9 @@ class Page
     anchors
   end
 
-  # Gather values of the id and name attributes from the page text.
-  def gather_ids(text)
-    text.lines.each do |line|
+  # Gather values of the id and name attributes from the HTML.
+  def gather_ids(html)
+    html.lines.each do |line|
       values = get_attribute_values(line, %w[ id name ])
       values.each do |value|
         ids.push(value)

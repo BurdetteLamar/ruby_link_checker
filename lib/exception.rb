@@ -23,10 +23,10 @@ class RubyLinkCheckerException < Exception
   end
 
 end
-
 class URIParseException < RubyLinkCheckerException; end
-
 class HTTPResponseException < RubyLinkCheckerException; end
 
 class AnchorParseException < RubyLinkCheckerException; end
+
+class FileReadException < RubyLinkCheckerException; end
 

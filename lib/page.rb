@@ -56,7 +56,23 @@ class Page
       # Get the HTML.
       response.body
     else
-      fail 'file'
+      if path == ''
+        filepath = source
+      else
+        filepath = File.join(File.dirname(source), path)
+      end
+      filepath.sub!(%r[^\./], '')
+      begin
+        html = File.read(filepath)
+        self.code = 200
+        html
+      rescue => x
+        description = "File.read(filepath) failed."
+        exception = FileReadException.new(description, 'filepath', filepath, x.class.name, x.message)
+        exceptions << exception
+        self.code = 404
+        ''
+      end
     end
   end
 
@@ -97,7 +113,7 @@ class Page
         begin
           doc = REXML::Document.new(anchor)
           root = doc.root
-          href = root.attributes['href']
+          href = root.attributes['href'].sub(%r[^./], '')
           text = root.text
           # May need to get text from first child.
           if text.nil? && root.children.size > 0

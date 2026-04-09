@@ -17,12 +17,21 @@ class TestRubyLinkChecker < Minitest::Test
     assert_equal('200', response.code)
   end
 
+  def test_option_version
+    command = Command.new(
+      self,
+      options: %w[ --version ],
+      exp_stdout: /\d+\.\d+\.\d+/
+      )
+    command.execute
+  end
+
   def test_option_help
     command = Command.new(
       self,
       options: %w[ --help ],
       exp_stdout: 'Usage: bin/ruby_link_checker [options]',
-    )
+      )
     command.execute
   end
 
@@ -63,5 +72,3 @@ class TestRubyLinkChecker < Minitest::Test
   end
 
 end
-
-

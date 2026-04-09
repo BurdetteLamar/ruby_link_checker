@@ -118,7 +118,7 @@ EOT
       {'End Time' => :label, end_time => :info_text},
       {'Duration' => :label, duration => :info_text},
     ]
-    table2(body, data, 'gathering', 'Gathering')
+    table2(body, data, id: 'gathering', title: 'Gathering', type: 'Gathering')
 
     onsite_link_count = 0
     offsite_link_count = 0
@@ -151,7 +151,7 @@ EOT
       {'Pages Not Found' => :label, broken_path_count => broken_path_status},
       {'Fragments Not Found' => :label, broken_fragment_count => broken_fragment_status},
     ]
-    table2(body, data, 'summary', 'Pages and Links')
+    table2(body, data, id: 'summary', title: 'Pages and Links', type: 'Pages and Links')
   end
 
   def add_onsite_paths(body, checker)
@@ -170,6 +170,7 @@ EOT
     p = details.add_element('p')
     p.text = 'The counts of unverified pages and fragments are color-coded:'
     table = details.add_element('table')
+    table.add_attribute('type', 'Colors')
     tr = table.add_element('tr')
     th = tr.add_element('th')
     th.text = 'Color'
@@ -302,6 +303,7 @@ EOT
     body.add_element('p')
 
     table = body.add_element('table')
+    table.add_attribute('type', 'Main')
 
 
     page_id = 0
@@ -441,7 +443,7 @@ EOT
             {'Text' => :label, link.text => :info_text},
             {'Line Number' => :label, link.lineno => :info_tex},
           ]
-          table2(body, data, "#{path}-summary", error)
+          table2(body, data, id: "#{path}-summary", title: error, type: error)
         end
       end
       page.exceptions.each do |exception|
@@ -452,7 +454,7 @@ EOT
           {'Class Name' => :label, exception.class_name => :info_text},
           {'Message' => :label, exception.message => :info_text},
         ]
-        table2(body, data, "#{path}-exception", 'Exception')
+        table2(body, data, id: "#{path}-exception", title: 'Exception', type: 'Exception')
       end
 
       body.add_element(Element.new('p'))
@@ -545,10 +547,11 @@ EOT
     end
   end
 
-  def table2(parent, data, id = nil, title = nil)
+  def table2(parent, data, id: nil, title: nil, type: nil)
     data = data.dup
     table = parent.add_element(Element.new('table'))
     table.add_attribute('id', id) if id
+    table.add_attribute('type', type) if type
     if title
       tr = table.add_element(Element.new('tr'))
       th = tr.add_element(Element.new('th'))

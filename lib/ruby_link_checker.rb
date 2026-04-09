@@ -49,6 +49,12 @@ class RubyLinkChecker
 
   # Return a new RubyLinkChecker object.
   def initialize(paths = {}, times = {}, options: {})
+    if options[:no_op]
+      puts 'Checker options:'
+      options.each_pair do |key, value|
+        puts "  #{key}: #{value}"
+      end
+    end
     self.paths = paths
     self.times = times
     self.options = DEFAULT_OPTIONS.merge(options)

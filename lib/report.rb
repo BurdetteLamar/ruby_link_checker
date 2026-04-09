@@ -44,6 +44,13 @@ EOT
 
   # Create the report for info gathered by the checker.
   def create_report(checker, report_options)
+    if report_options[:no_op]
+      puts 'Report options:'
+      report_options.each_pair do |key, value|
+        puts "  #{key}: #{value}"
+      end
+      return
+    end
     self.checker = checker
     # Default dir for stashes and reports.
     dirpath = './ruby_link_checker'

@@ -35,6 +35,7 @@ options = {
   legal: false,
   news: false,
   verbosity: 'minimal',
+  no_op: false,
 }
 
 parser.on(
@@ -113,6 +114,14 @@ parser.on(
 end
 
 parser.on(
+  '--no-op',
+  'Do not read documentation or write reports,',
+  '  but print as much information as possible.',
+) do |arg|
+  options[:no_op] = true
+end
+
+parser.on(
   '--version',
   'Print the version and exit.',
 ) do
@@ -136,11 +145,12 @@ report_options = {
 # These options are for both stashing and reporting.
 report_options[:verbosity] = options[:verbosity]
 report_options[:source] = options[:source]
+report_options[:no_op] = options[:no_op]
 
 checker = RubyLinkChecker.new(options: options)
-checker.create_stash unless report_only
+checker.create_stash unless report_only || options[:no_op]
 report_filepath = checker.create_report(report_options)
-
+exit if options[:no_op]
 if open_report
   command = "start #{report_filepath}"
   system(command)

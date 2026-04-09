@@ -107,7 +107,8 @@ parser.on(
 ) do |arg|
   valid_args = %w[quiet minimal debug]
   unless valid_args.include?(arg)
-    puts "  Error: --verbosity LEVEL must be one of: #{valid_args.join(', ')}."
+    message = "  Error: --verbosity LEVEL must be one of: #{valid_args.join(', ')}, not #{arg}."
+    $stderr.puts message
     exit 1
   end
   options[:verbosity] = arg

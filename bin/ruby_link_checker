@@ -40,12 +40,12 @@ options = {
 parser.on(
   '--source=SOURCE',
   'Specify the location of the documentation to check;',
-  "  defaults to #{RubyLinkChecker::BASE_URL}/master;",
+  "  defaults to #{File.join(RubyLinkChecker::BASE_URL, 'master', 'index.html')};",
   '  otherwise must be one of:',
   '  - Version (e.g., "4.0") of the Ruby documentation to be read;',
   "    see versions at #{RubyLinkChecker::BASE_URL}.",
   '    The first page to be read will be',
-  "    #{RubyLinkChecker::BASE_URL}/<version>.",
+  "    #{File.join(RubyLinkChecker::BASE_URL, '<version>', 'index.html')}.",
   '  - URL of the first page to be read.',
   '  - File path of the first page to be read.'
 ) do |arg|

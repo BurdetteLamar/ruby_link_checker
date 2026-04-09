@@ -9,9 +9,8 @@ require_relative 'link'
 require_relative 'exception'
 require_relative 'report'
 
-# A class to check links on pages in the official Ruby documentation
-# at https://docs.ruby-lang.org/en/master.
-#
+# A class to check links on pages in the Ruby documentation
+# at the given source.
 # TODO:
 # - Fix verbosity: stdout, levels.
 # - RubyLinkChecker:
@@ -59,7 +58,7 @@ class RubyLinkChecker
   def get_source(source_option)
     case
     when source_option.nil?
-      [:web, File.join(RubyLinkChecker::BASE_URL, 'master')]
+      [:web, File.join(RubyLinkChecker::BASE_URL, 'master', 'index.html')]
     when source_option.start_with?('http')
       [:web, source_option]
     when File.file?(source_option)

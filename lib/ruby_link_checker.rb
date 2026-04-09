@@ -57,16 +57,16 @@ class RubyLinkChecker
   end
 
   def get_source(source_option)
-    source = case
-             when source_option.nil?
-               [:web, File.join(RubyLinkChecker::BASE_URL, 'master')]
-             when source_option.start_with?('http')
-               [:web, source_option]
-             when File.file?(source_option)
-               [:file, source_option]
-             else
-               [:web, File.join(RubyLinkChecker::BASE_URL, source_option)]
-             end
+    case
+    when source_option.nil?
+      [:web, File.join(RubyLinkChecker::BASE_URL, 'master')]
+    when source_option.start_with?('http')
+      [:web, source_option]
+    when File.file?(source_option)
+      [:file, source_option]
+    else
+      [:web, File.join(RubyLinkChecker::BASE_URL, source_option)]
+    end
   end
 
   def create_stash

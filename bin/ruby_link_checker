@@ -2,6 +2,7 @@
 
 require 'optparse'
 require_relative '../lib/ruby_link_checker'
+require_relative '../lib/ruby_link_checker/version'
 
 parser = OptionParser.new
 
@@ -120,21 +121,26 @@ parser.on(
 end
 
 parser.parse!
+
 # These options are handled here.
 report_only = options.delete(:report_only)
 open_report = options.delete(:open_report)
+
 # These options are for reporting only.
 report_options = {
   :legal => options.delete(:legal),
   :news => options.delete(:news),
   :github_lines => options.delete(:github_lines),
 }
+
 # These options are for both stashing and reporting.
 report_options[:verbosity] = options[:verbosity]
 report_options[:source] = options[:source]
+
 checker = RubyLinkChecker.new(options: options)
 checker.create_stash unless report_only
 report_filepath = checker.create_report(report_options)
+
 if open_report
   command = "start #{report_filepath}"
   system(command)

@@ -550,7 +550,7 @@ EOT
     table = parent.add_element(Element.new('table'))
     table.add_attribute('id', id) if id
     if title
-      tr = table.add_element(Element.new('tr)'))
+      tr = table.add_element(Element.new('tr'))
       th = tr.add_element(Element.new('th'))
       th.add_attribute('colspan', 2)
       th.add_attribute('class', CSS_CLASSES[:table_header])

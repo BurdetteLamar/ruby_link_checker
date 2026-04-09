@@ -99,13 +99,13 @@ parser.on(
 end
 
 parser.on(
-  '--verbosity=LEVEL',
-  'Set verbosity level to one of:',
+  '--verbosity=SETTING',
+  'Set verbosity to one of:',
   '  quiet: Print no progress messages.',
-  '  moderate: (default) Print some progress messages',
+  '  minimal: (default) Print some progress messages',
   '  debug: Print extensive progress messages.'
 ) do |arg|
-  valid_args = %w[quiet moderate debug]
+  valid_args = %w[quiet minimal debug]
   unless valid_args.include?(arg)
     puts "  Error: --verbosity LEVEL must be one of: #{valid_args.join(', ')}."
     exit 1

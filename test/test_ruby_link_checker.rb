@@ -43,6 +43,7 @@ class TestRubyLinkChecker < Minitest::Test
                   :exp_stdout, :exp_stderr, :exp_status,  # Expected output values.
                   :act_stdout, :act_stderr, :act_status   # Actual output values.
 
+    # Returns a new Command object.
     def initialize(
       test,
       options: [],
@@ -60,7 +61,7 @@ class TestRubyLinkChecker < Minitest::Test
 
     EXECUTABLE_PATH = 'bin/ruby_link_checker'
 
-    # Execute the command, after which actual values are available.
+    # Executes the command, after which actual values are available.
     def execute
       command = "ruby #{EXECUTABLE_PATH} #{options.join(' ')} #{arguments.join(' ')}"
       self.act_stdout, self.act_stderr, status = Open3.capture3(command)

@@ -62,12 +62,15 @@ class TestRubyLinkChecker < Minitest::Test
         exp_stdout: "verbosity: #{level}"
       ).execute
     end
-    Command.new(
+    command = Command.new(
       self,
       options: %w[ --no-op --verbosity=FOO ],
       exp_status: 1,
-      exp_stderr: 'FOO',
-    ).execute
+    )
+    command.execute
+    %w[ Error --verbosity FOO ArgumentError].each do |s|
+      command.act_stderr.match(s)
+    end
   end
 
   def test_option_legal
@@ -109,4 +112,17 @@ class TestRubyLinkChecker < Minitest::Test
     ).execute
   end
 
+  def zzz_test_source
+    Command.new(
+      self,
+      options: %w[ --no-op ],
+      exp_stdout: 'source: master'
+    ).execute
+    Command.new(
+      self,
+      options: %w[ --no-op --source=FOO ],
+      exp_stdout: 'source: BAR'
+    ).execute
+
+  end
 end

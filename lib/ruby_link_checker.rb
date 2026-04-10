@@ -151,13 +151,12 @@ class RubyLinkChecker
     new(*object['a'])
   end
 
-  VERBOSITY_LEVELS = %W[ quiet mininal debug ]
+  VERBOSITY_LEVELS = %W[ quiet minimal debug ]
 
   def self.validate_verbosity(level)
     unless VERBOSITY_LEVELS.include?(level)
-      message = "  Error: --verbosity LEVEL must be one of: #{VERBOSITY_LEVELS.join(', ')}, not #{level}."
-      $stderr.puts message
-      exit 1
+      message = "  Error: --verbosity LEVEL must be one of: #{VERBOSITY_LEVELS.join(', ')}; not #{level}."
+      raise ArgumentError.new(message)
     end
   end
 end

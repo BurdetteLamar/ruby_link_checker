@@ -55,7 +55,7 @@ class TestRubyLinkChecker < Minitest::Test
       options: %w[ --no-op ],
       exp_stdout: 'verbosity: minimal'
     ).execute
-    RubyLinkChecker::VERBOSITY_LEVELS.each do |level|
+    RubyLinkChecker::VERBOSITY_LEVELS.keys.each do |level|
       Command.new(
         self,
         options: [ '--no-op', "--verbosity=#{level}"],

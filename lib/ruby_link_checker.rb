@@ -151,11 +151,15 @@ class RubyLinkChecker
     new(*object['a'])
   end
 
-  VERBOSITY_LEVELS = %W[ quiet minimal debug ]
+  VERBOSITY_LEVELS = {
+    'quiet' => 'Print no progress messages.',
+    'minimal' => '(default) Print some progress messages',
+    'debug' => 'Print all progress messages.'
+  }
 
   def self.validate_verbosity(level)
-    unless VERBOSITY_LEVELS.include?(level)
-      message = "  Error: --verbosity LEVEL must be one of: #{VERBOSITY_LEVELS.join(', ')}; not #{level}."
+    unless VERBOSITY_LEVELS.keys.include?(level)
+      message = "  Error: --verbosity LEVEL must be one of: #{VERBOSITY_LEVELS.keys.join(', ')}; not #{level}."
       raise ArgumentError.new(message)
     end
   end

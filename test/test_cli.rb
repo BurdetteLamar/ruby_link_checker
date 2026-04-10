@@ -55,11 +55,11 @@ class TestRubyLinkChecker < Minitest::Test
       options: %w[ --no-op ],
       exp_stdout: 'verbosity: minimal'
     ).execute
-    %w[quiet minimal debug].each do |setting|
+    RubyLinkChecker::VERBOSITY_LEVELS.each do |level|
       Command.new(
         self,
-        options: [ '--no-op', "--verbosity=#{setting}"],
-        exp_stdout: "verbosity: #{setting}"
+        options: [ '--no-op', "--verbosity=#{level}"],
+        exp_stdout: "verbosity: #{level}"
       ).execute
     end
     Command.new(

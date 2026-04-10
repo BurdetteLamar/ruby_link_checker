@@ -105,12 +105,7 @@ parser.on(
   '  minimal: (default) Print some progress messages',
   '  debug: Print extensive progress messages.'
 ) do |arg|
-  valid_args = %w[quiet minimal debug]
-  unless valid_args.include?(arg)
-    message = "  Error: --verbosity LEVEL must be one of: #{valid_args.join(', ')}, not #{arg}."
-    $stderr.puts message
-    exit 1
-  end
+  RubyLinkChecker.validate_verbosity(arg)
   options[:verbosity] = arg
 end
 

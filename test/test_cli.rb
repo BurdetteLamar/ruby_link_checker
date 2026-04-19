@@ -6,17 +6,19 @@ class TestRubyLinkChecker < Minitest::Test
 
   # The tests for the first two options do not call the checker.
 
-  def test_option_version
+  def test_cli_option_version
     Command.new(
       self,
+      __method__,
       options: %w[ --version ],
       exp_stdout: /\d+\.\d+\.\d+/
     ).execute
   end
 
-  def test_option_help
+  def test_cli_option_help
     Command.new(
       self,
+      __method__,
       options: %w[ --help ],
       exp_stdout: 'Usage: bin/ruby_link_checker [options]',
       ).execute
@@ -28,101 +30,156 @@ class TestRubyLinkChecker < Minitest::Test
   # not that the checker uses them well or wisely;
   # that's a job for other tests.
 
-  def test_option_no_op
+  def test_cli_option_no_op
     Command.new(
       self,
+      __method__,
       options: %w[ --no-op ],
       exp_stdout: 'no_op: true'
     ).execute
   end
 
-  def test_option_source
+  def test_cli_option_source_master
     Command.new(
       self,
+      __method__,
       options: %w[ --no-op ],
       exp_stdout: 'source: master'
     ).execute
+  end
+
+  def test_cli_option_source_revision
     Command.new(
       self,
-      options: %w[ --no-op --source=FOO ],
-      exp_stdout: 'source: FOO'
+      __method__,
+      options: %w[ --no-op --source=4.0 ],
+      exp_stdout: 'source: 4.0'
     ).execute
   end
 
-  def test_option_verbosity
+  def test_cli_option_source_bad
     Command.new(
       self,
+      __method__,
+      options: %w[ --no-op --source=nosuch ],
+      exp_stderr: '404',
+      exp_status: 1,
+    ).execute
+  end
+
+  def test_cli_option_report_only
+    Command.new(
+      self,
+      __method__,
+      options: %w[ --no-op ],
+      exp_stdout: 'report_only: false'
+    ).execute
+    Command.new(
+      self,
+      __method__,
+      options: %w[ --no-op --report-only ],
+      exp_stdout: 'report_only: true'
+    ).execute
+  end
+
+  def test_cli_option_open_report
+    Command.new(
+      self,
+      __method__,
+      options: %w[ --no-op ],
+      exp_stdout: 'open_report: false'
+    ).execute
+    Command.new(
+      self,
+      __method__,
+      options: %w[ --no-op --open-report ],
+      exp_stdout: 'open_report: true'
+    ).execute
+  end
+
+  def test_cli_option_verbosity_quiet
+    Command.new(
+      self,
+      __method__,
+      options: %w[ --no-op --verbosity=quiet],
+      exp_stdout: 'verbosity: quiet'
+    ).execute
+  end
+
+  def test_cli_option_verbosity_minimal
+    Command.new(
+      self,
+      __method__,
       options: %w[ --no-op ],
       exp_stdout: 'verbosity: minimal'
     ).execute
-    RubyLinkChecker::VERBOSITY_LEVELS.keys.each do |level|
-      Command.new(
-        self,
-        options: [ '--no-op', "--verbosity=#{level}"],
-        exp_stdout: "verbosity: #{level}"
-      ).execute
-    end
+  end
+
+  def test_cli_option_verbosity_debug
+    Command.new(
+      self,
+      __method__,
+      options: %w[ --no-op --verbosity=debug ],
+      exp_stdout: 'verbosity: debug'
+    ).execute
+  end
+
+  def test_cli_option_verbosity_bad
     command = Command.new(
       self,
-      options: %w[ --no-op --verbosity=FOO ],
+      __method__,
+      options: %w[ --no-op --verbosity=nosuch ],
       exp_status: 1,
     )
     command.execute
-    %w[ Error --verbosity FOO ArgumentError].each do |s|
+    %w[ Error --verbosity nosuch ArgumentError].each do |s|
       command.act_stderr.match(s)
     end
   end
 
-  def test_option_legal
+  def test_cli_option_legal
     Command.new(
       self,
+      __method__,
       options: %w[ --no-op ],
       exp_stdout: 'legal: false'
     ).execute
     Command.new(
       self,
+      __method__,
       options: %w[ --no-op --legal ],
       exp_stdout: 'legal: true'
     ).execute
   end
 
-  def test_option_news
+  def test_cli_option_news
     Command.new(
       self,
+      __method__,
       options: %w[ --no-op ],
       exp_stdout: 'news: false'
     ).execute
     Command.new(
       self,
+      __method__,
       options: %w[ --no-op --news ],
       exp_stdout: 'news: true'
     ).execute
   end
 
-  def test_option_github_lines
+  def test_cli_option_github_lines
     Command.new(
       self,
+      __method__,
       options: %w[ --no-op ],
       exp_stdout: 'github_lines: false'
     ).execute
     Command.new(
       self,
+      __method__,
       options: %w[ --no-op --github-lines ],
       exp_stdout: 'github_lines: true'
     ).execute
   end
 
-  def zzz_test_source
-    Command.new(
-      self,
-      options: %w[ --no-op ],
-      exp_stdout: 'source: master'
-    ).execute
-    Command.new(
-      self,
-      options: %w[ --no-op --source=FOO ],
-      exp_stdout: 'source: BAR'
-    ).execute
-
-  end
 end

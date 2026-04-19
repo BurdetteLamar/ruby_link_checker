@@ -1,3 +1,4 @@
+
 require 'net/http'
 require 'json'
 require 'json/add/time'
@@ -36,10 +37,17 @@ require_relative 'report'
 #   - Don't use JSON addition for Time; write and read as string.
 class RubyLinkChecker
 
-  SchemeList = URI.scheme_list.keys.map {|scheme| scheme.downcase}
-  SchemeRegexp = Regexp.new('^(' + SchemeList.join('|') + ')')
+  SCHEME_LIST = URI.scheme_list.keys.map {|scheme| scheme.downcase}
+  SCHEME_REGEXP = Regexp.new('^(' + SCHEME_LIST.join('|') + ')')
   DEFAULT_OPTIONS = {
+    source: 'master',
+    report_only: false,
+    open_report: false,
+    github_lines: false,
+    legal: false,
+    news: false,
     verbosity: 'minimal',
+    no_op: false,
   }
 
   # URL for documentation base page.
@@ -49,16 +57,26 @@ class RubyLinkChecker
 
   # Return a new RubyLinkChecker object.
   def initialize(paths = {}, times = {}, options: {})
-    if options[:no_op]
-      puts 'Checker options:'
+    self.options = DEFAULT_OPTIONS.merge(options)
+    check_options(self.options)
+    if self.options[:no_op]
+      puts 'Options:'
       options.each_pair do |key, value|
         puts "  #{key}: #{value}"
       end
+      return
     end
     self.paths = paths
     self.times = times
-    self.options = DEFAULT_OPTIONS.merge(options)
+    self.options = options
     self.source_type, self.source = get_source(options[:source])
+    exit if options[:no_op]
+    create_stash unless options[:report_only]
+    report_filepath = Report.new.create_report(self, options)
+    if options[:open_report]
+       command = "start #{report_filepath}"
+       system(command)
+    end
   end
 
   def get_source(source_option)
@@ -119,13 +137,9 @@ class RubyLinkChecker
     File.write(filepath, json)
   end
 
-  def create_report(report_options)
-    Report.new.create_report(self, report_options)
-  end
-
   # Returns whether the path is onsite.
   def self.onsite?(path)
-    !path.match(SchemeRegexp)
+    !path.match(SCHEME_REGEXP)
   end
 
   def self.offsite?(path)
@@ -163,4 +177,63 @@ class RubyLinkChecker
       raise ArgumentError.new(message)
     end
   end
+
+
+  def check_options(options)
+    extra_options = options.keys - DEFAULT_OPTIONS.keys
+    unless extra_options.empty?
+      message = <<EOT
+Unknown options: #{extra_options.join(', ')};
+must be one of: #{DEFAULT_OPTIONS.keys.join(', ')}.
+EOT
+      raise ArgumentError.new(message)
+    end
+    %i[open_report report_only github_lines legal news no_op].each do |option|
+      check_boolean_option(option)
+    end
+    check_option(:verbosity, %w[quiet minimal debug])
+    check_source_option
+  end
+
+  def check_boolean_option(option)
+    check_option(option, [true, false])
+  end
+
+  def check_option(option, valid_values)
+    value = self.options[option]
+    unless valid_values.include?(value)
+      message = "  Error: --#{option} must be one of: #{valid_values.join(', ')}; not #{value}"
+      raise ArgumentError.new(message)
+    end
+  end
+
+  def check_source_option
+    value = self.options[:source]
+    return if value.nil?
+    return if File.file?(value)
+    if value.match(SCHEME_REGEXP)
+      url = value
+    else
+      url = File.join(RubyLinkChecker::BASE_URL, value, '')
+    end
+    begin
+      uri = URI.parse(url)
+    rescue => x
+      description = "URI(url) failed."
+      raise URIParseException.new(description, 'url', url, x.class.name, x.message)
+    end
+    code = nil
+    begin
+      response = Net::HTTP.get_response(uri)
+      code = response.code.to_i
+    rescue => x
+      description = "Net::HTTP.get_response(uri) failed."
+      raise HTTPResponseException.new(description, 'uri', uri, x.class.name, x.message)
+    end
+    unless code == 200
+      description = "Response code (#{response.code}) for URI #{uri}"
+      raise HTTPResponseException.new(description, 'uri', uri, x.class.name, "Bad code: #{response.code}.")
+    end
+  end
+
 end

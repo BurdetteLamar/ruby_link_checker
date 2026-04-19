@@ -127,27 +127,4 @@ end
 
 parser.parse!
 
-# These options are handled here.
-report_only = options.delete(:report_only)
-open_report = options.delete(:open_report)
-
-# These options are for reporting only.
-report_options = {
-  :legal => options.delete(:legal),
-  :news => options.delete(:news),
-  :github_lines => options.delete(:github_lines),
-}
-
-# These options are for both stashing and reporting.
-report_options[:verbosity] = options[:verbosity]
-report_options[:source] = options[:source]
-report_options[:no_op] = options[:no_op]
-
-checker = RubyLinkChecker.new(options: options)
-checker.create_stash unless report_only || options[:no_op]
-report_filepath = checker.create_report(report_options)
-exit if options[:no_op]
-if open_report
-  command = "start #{report_filepath}"
-  system(command)
-end
+RubyLinkChecker.new(options: options)

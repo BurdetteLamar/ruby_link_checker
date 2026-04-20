@@ -48,6 +48,7 @@ class RubyLinkChecker
     news: false,
     verbosity: 'minimal',
     no_op: false,
+    from_json: false
   }
 
   # URL for documentation base page.
@@ -56,7 +57,10 @@ class RubyLinkChecker
   attr_accessor :paths, :times, :options, :source_type, :source
 
   # Return a new RubyLinkChecker object.
-  def initialize(paths = {}, times = {}, options: {})
+  def initialize(paths = {}, times = {}, options = {})
+    # Options keys from CLI are already symbols;
+    # those from JSON are strings, so transform to symbols.
+    options.transform_keys! {|old_key| old_key.to_sym }
     self.options = DEFAULT_OPTIONS.merge(options)
     check_options(self.options)
     if self.options[:no_op]
@@ -129,6 +133,8 @@ class RubyLinkChecker
       end
     end
     times['end'] = Time.now
+    options[:report_only] = true
+    options[:from_json] = true
     json = JSON.pretty_generate(self)
     dirpath = File.join('./ruby_link_checker', timestamp)
     FileUtils.mkdir_p(dirpath)
@@ -157,7 +163,7 @@ class RubyLinkChecker
   def to_json(*args)
     {
       JSON.create_id  => self.class.name,
-      'a'             => [ paths, times ],
+      'a'             => [ paths, times, options ],
     }.to_json(*args)
   end
 

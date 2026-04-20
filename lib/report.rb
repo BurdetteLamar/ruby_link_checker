@@ -43,10 +43,10 @@ EOT
   attr_accessor :checker, :onsite_paths, :offsite_paths, :paths
 
   # Create the report for info gathered by the checker.
-  def create_report(checker, report_options)
-    if report_options[:no_op]
+  def create_report(checker, options)
+    if options[:no_op]
       puts 'Report options:'
-      report_options.each_pair do |key, value|
+      options.each_pair do |key, value|
         puts "  #{key}: #{value}"
       end
       return
@@ -60,13 +60,15 @@ EOT
     # Read and parse the stash into a new RubyLinkChecker object.
     stash_filename = 'stash.json'
     stash_filepath = File.join(recent_dirpath, stash_filename)
-    checker.progress(:minimal, "Reading stash file: #{stash_filepath.inspect}")
-    json = File.read(stash_filepath)
-    checker = JSON.parse(json, create_additions: true)
-    # Merge in the options for reporting (from the CLI).
-    checker.options.merge!(report_options)
+    unless self.checker.options[:from_json]
+      checker.progress(:minimal, "Reading stash file: #{stash_filepath.inspect}")
+      json = File.read(stash_filepath)
+      self.checker = JSON.parse(json, create_additions: true)
+      # Merge in the options for reporting (from the CLI).
+      self.checker.options.merge!(options)
+    end
     # Put checker paths onto Report object.
-    self.paths = checker.paths
+    self.paths = self.checker.paths
     # Verify links.
     verify_links
     

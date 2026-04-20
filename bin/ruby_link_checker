@@ -127,4 +127,4 @@ end
 
 parser.parse!
 
-RubyLinkChecker.new(options: options)
+RubyLinkChecker.new({}, {}, options)

@@ -34,7 +34,7 @@ options = {
   github_lines: false,
   legal: false,
   news: false,
-  verbosity: 'minimal',
+  verbosity: 'moderate',
   no_op: false,
 }
 
@@ -102,8 +102,9 @@ parser.on(
   '--verbosity=SETTING',
   'Set verbosity to one of:',
   '  quiet: Print no progress messages.',
-  '  minimal: (default) Print some progress messages',
-  '  debug: Print extensive progress messages.'
+  '  minimal: Print only large-scale progress messages.',
+  '  moderate: (default) Print more progress messages.',
+  '  debug: Print all progress messages.'
 ) do |arg|
   RubyLinkChecker.validate_verbosity(arg)
   options[:verbosity] = arg

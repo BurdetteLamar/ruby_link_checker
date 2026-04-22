@@ -20,6 +20,8 @@ require_relative 'report'
 #   - Other options via ENV?
 #   - Initialization file?
 # - Report:
+#   - Change "verify" to "check" both in doc strings and in method names.
+#   - Change "json" to "stash" in doc strings.
 #   - Report target, CLI options, ENV values.
 #   - Re-structure code, and comment.
 #   - Open report in browser (all platforms).
@@ -46,18 +48,18 @@ class RubyLinkChecker
     github_lines: false,
     legal: false,
     news: false,
-    verbosity: 'minimal',
+    verbosity: 'moderate',
     no_op: false,
-    from_json: false
+    from_stash: false
   }
 
   # URL for documentation base page.
   BASE_URL = 'https://docs.ruby-lang.org/en'
 
-  attr_accessor :paths, :times, :options, :source_type, :source
+  attr_accessor :paths, :times, :options, :source_type, :source, :progress_level
 
   # Return a new RubyLinkChecker object.
-  def initialize(paths = {}, times = {}, options = {})
+  def initialize(paths = {}, times = {}, options = DEFAULT_OPTIONS)
     # Options keys from CLI are already symbols;
     # those from JSON are strings, so transform to symbols.
     options.transform_keys! {|old_key| old_key.to_sym }
@@ -70,11 +72,22 @@ class RubyLinkChecker
       end
       return
     end
+    self.progress_level = %w[quiet minimal moderate debug].index(options[:verbosity])
+    message = 'Created RubyLinkChecker'
+    if options[:from_stash]
+      message += ' from stash.'
+    else
+      message += ' from source.'
+    end
+    progress(1, message)
     self.paths = paths
     self.times = times
     self.options = options
     self.source_type, self.source = get_source(options[:source])
-    exit if options[:no_op]
+    if options[:no_op]
+      progress(1, "No-op competed.")
+      exit
+    end
     create_stash unless options[:report_only]
     report_filepath = Report.new.create_report(self, options)
     if options[:open_report]
@@ -97,6 +110,7 @@ class RubyLinkChecker
   end
 
   def create_stash
+    progress(1, 'Creating stash.')
     time = Time.now
     timestamp = time.strftime(Report::TIME_FORMAT)
     times['start'] = time
@@ -109,7 +123,7 @@ class RubyLinkChecker
       next if paths[path]
       # New page.
       page = Page.new(source_type, source, path)
-      progress(:minimal, "%4.4d queued:  Fetching \"%s\"" % [paths_queue.size, path])
+      progress(2, "%4.4d queued:  Fetching \"%s\"" % [paths_queue.size, path])
       page.check_page
       paths[path] = page
       # Queue any new paths.
@@ -128,19 +142,20 @@ class RubyLinkChecker
         next if paths.include?(_path)
         next if paths_queue.include?(_path)
         # Queue it.
-        progress(:minimal, "%4.4d queued:  Queueing \"%s\"" % [paths_queue.size, _path])
+        progress(2, "%4.4d queued:  Queueing \"%s\"" % [paths_queue.size, _path])
         paths_queue.push(_path)
       end
     end
     times['end'] = Time.now
     options[:report_only] = true
-    options[:from_json] = true
+    options[:from_stash] = true
     json = JSON.pretty_generate(self)
     dirpath = File.join('./ruby_link_checker', timestamp)
     FileUtils.mkdir_p(dirpath)
     filename = 'stash.json'
     filepath = File.join(dirpath, filename)
     File.write(filepath, json)
+    progress(1, "Stash created at #{filepath}")
   end
 
   # Returns whether the path is onsite.
@@ -153,11 +168,7 @@ class RubyLinkChecker
   end
 
   def progress(level, message)
-    puts message unless options[:verbosity] == 'quiet'
-  end
-
-  def debug(message)
-    puts message if options[:verbosity] == 'debug'
+    puts message unless progress_level < level
   end
 
   def to_json(*args)
@@ -173,7 +184,8 @@ class RubyLinkChecker
 
   VERBOSITY_LEVELS = {
     'quiet' => 'Print no progress messages.',
-    'minimal' => '(default) Print some progress messages',
+    'minimal' => 'Print only large-scale progress messages',
+    'moderate' => '(default) Print more progress messages',
     'debug' => 'Print all progress messages.'
   }
 
@@ -197,7 +209,7 @@ EOT
     %i[open_report report_only github_lines legal news no_op].each do |option|
       check_boolean_option(option)
     end
-    check_option(:verbosity, %w[quiet minimal debug])
+    check_option(:verbosity, %w[quiet minimal moderate debug])
     check_source_option
   end
 

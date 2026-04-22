@@ -51,6 +51,7 @@ EOT
       end
       return
     end
+    checker.progress(1, 'Creating report.')
     self.checker = checker
     # Default dir for stashes and reports.
     dirpath = './ruby_link_checker'
@@ -60,9 +61,10 @@ EOT
     # Read and parse the stash into a new RubyLinkChecker object.
     stash_filename = 'stash.json'
     stash_filepath = File.join(recent_dirpath, stash_filename)
-    unless self.checker.options[:from_json]
-      checker.progress(:minimal, "Reading stash file: #{stash_filepath.inspect}")
+    unless self.checker.options[:from_stash]
+      checker.progress(1, "Reading stash file: #{stash_filepath.inspect}")
       json = File.read(stash_filepath)
+      checker.progress(1, "Read stash file: #{stash_filepath.inspect}")
       self.checker = JSON.parse(json, create_additions: true)
       # Merge in the options for reporting (from the CLI).
       self.checker.options.merge!(options)
@@ -101,8 +103,8 @@ EOT
     f = File.open(report_filepath, 'w')
     doc.write(f, 2)
     f.close
-    puts "Report file: #{report_filepath}"
     report_filepath
+    checker.progress(1, "Created report at #{report_filepath}.")
   end
 
   def add_title(body)
@@ -316,8 +318,9 @@ EOT
 
 
     page_id = 0
+    checker.progress(1, "Reporting pages.")
     onsite_paths.keys.sort.each do |path|
-      puts "Reporting #{path.inspect}"
+      checker.progress(2, "Reporting #{path.inspect}.")
       page = onsite_paths[path]
       if path.empty?
         path = checker.options[:source]
@@ -468,6 +471,7 @@ EOT
 
       body.add_element(Element.new('p'))
     end
+    checker.progress(1, "Reported pages.")
   end
 
   def github_lines_fragment?(path, fragment)
@@ -603,10 +607,11 @@ EOT
   end
 
   def verify_links
+    checker.progress(1, "Verifying links on pages.")
     paths.keys.sort.each do |path|
       page = paths[path]
       next if RubyLinkChecker.offsite?(path)
-      checker.progress(:minimal, "Verifying links on #{path.inspect}")
+      checker.progress(2, "Verifying links on #{path.inspect}")
       page.links.each do |link|
         if link.path.empty?
           if link.fragment.empty?
@@ -643,6 +648,7 @@ EOT
         end
       end
     end
+    checker.progress(1, "Verified links on pages.")
   end
 
 end

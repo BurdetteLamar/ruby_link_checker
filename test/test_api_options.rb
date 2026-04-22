@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'test_helper'
+require_relative './test_helper'
 
 class TestRubyLinkChecker < Minitest::Test
 
@@ -19,9 +19,9 @@ class TestRubyLinkChecker < Minitest::Test
     end
   end
 
-  def test_verbosity_option
+  def test_verbosity_options
     option = :verbosity
-    %w[quiet minimal debug].each do |value|
+    %w[quiet minimal moderate debug].each do |value|
       options = {option => value, :no_op => true}
       assert RubyLinkChecker.new(options: options)
     end
@@ -30,7 +30,7 @@ class TestRubyLinkChecker < Minitest::Test
       options = {option => value, :no_op => true}
       RubyLinkChecker.new(options: options)
     end
-    assert_match("Error: --verbosity must be one of: quiet, minimal, debug; not #{value}", x.message)
+    assert_match("Error: --verbosity must be one of: quiet, minimal, moderate, debug; not #{value}", x.message)
   end
 
   def test_source_option_nil
@@ -63,7 +63,7 @@ class TestRubyLinkChecker < Minitest::Test
     assert RubyLinkChecker.new(options: options)
   end
 
-  def test_source_option_404
+  def test_source_option_nosuch_url
     option = :source
     url = 'https://docs.ruby-lang.org/en/Nosuch.html'
     x = assert_raises(HTTPResponseException) do
@@ -74,9 +74,16 @@ class TestRubyLinkChecker < Minitest::Test
     assert_match(exp_description, x.description)
   end
 
-  def test_source_option_foo
-    # options = {option => 'FOO', :no_op => true}
-    # assert RubyLinkChecker.new(options: options)
+  def test_source_option_nosuch
+    option = :source
+    value = 'nosuch'
+    x = assert_raises(HTTPResponseException) do
+      options = {option => value, :no_op => true}
+      RubyLinkChecker.new(options: options)
+    end
+    tried_url = File.join(RubyLinkChecker::BASE_URL, value)
+    exp_description = "Response code (404) for URI #{tried_url}"
+    assert_match(exp_description, x.description)
   end
 
 end

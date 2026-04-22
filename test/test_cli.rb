@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'test_helper'
+require_relative './test_helper'
 
 class TestRubyLinkChecker < Minitest::Test
 
@@ -97,6 +97,15 @@ class TestRubyLinkChecker < Minitest::Test
     ).execute
   end
 
+  def test_cli_option_verbosity_default
+    Command.new(
+      self,
+      __method__,
+      options: %w[ --no-op ],
+      exp_stdout: 'verbosity: moderate'
+    ).execute
+  end
+
   def test_cli_option_verbosity_quiet
     Command.new(
       self,
@@ -110,8 +119,17 @@ class TestRubyLinkChecker < Minitest::Test
     Command.new(
       self,
       __method__,
-      options: %w[ --no-op ],
+      options: %w[ --no-op --verbosity=minimal],
       exp_stdout: 'verbosity: minimal'
+    ).execute
+  end
+
+  def test_cli_option_verbosity_moderate
+    Command.new(
+      self,
+      __method__,
+      options: %w[ --no-op ],
+      exp_stdout: 'verbosity: moderate'
     ).execute
   end
 

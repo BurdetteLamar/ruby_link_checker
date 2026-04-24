@@ -19,6 +19,7 @@ require_relative 'report'
 #     accept as CLI option or via ENV.
 #   - Other options via ENV?
 #   - Initialization file?
+#   - Try json/add/symbol (instead of transform_keys, below).
 # - Report:
 #   - Change "verify" to "check" both in doc strings and in method names.
 #   - Change "json" to "stash" in doc strings.
@@ -73,7 +74,6 @@ class RubyLinkChecker
       return
     end
     self.progress_level = %w[quiet minimal moderate debug].index(self.options[:verbosity])
-    p self.progress_level
     message = 'Created RubyLinkChecker'
     if self.options[:from_stash]
       message += ' from stash.'
@@ -89,7 +89,25 @@ class RubyLinkChecker
       exit
     end
     create_stash unless self.options[:report_only]
-    report_filepath = Report.new.create_report(self, options)
+    if self.options[:from_stash]
+      checker = self
+    else
+      # Default dir for stashes and reports.
+      dirpath = './ruby_link_checker'
+      # Dirpath to recent stash and report.
+      recent_dirname = Dir.new(dirpath).entries.last
+      recent_dirpath = File.join(dirpath, recent_dirname)
+      # Read and parse the stash into a new RubyLinkChecker object.
+      stash_filename = 'stash.json'
+      stash_filepath = File.join(recent_dirpath, stash_filename)
+      progress(1, "Reading stash file: #{stash_filepath.inspect}")
+      json = File.read(stash_filepath)
+      progress(1, "Read stash file: #{stash_filepath.inspect}")
+      checker = JSON.parse(json, create_additions: true)
+      # Merge in the options for reporting (from the CLI).
+      options.merge!(options)
+    end
+    report_filepath = Report.new.create_report(checker, options)
     if self.options[:open_report]
        command = "start #{report_filepath}"
        system(command)

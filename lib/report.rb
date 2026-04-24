@@ -53,23 +53,10 @@ EOT
     end
     checker.progress(1, 'Creating report.')
     self.checker = checker
-    # Default dir for stashes and reports.
     dirpath = './ruby_link_checker'
     # Dirpath to recent stash and report.
     recent_dirname = Dir.new(dirpath).entries.last
     recent_dirpath = File.join(dirpath, recent_dirname)
-    # Read and parse the stash into a new RubyLinkChecker object.
-    stash_filename = 'stash.json'
-    stash_filepath = File.join(recent_dirpath, stash_filename)
-    unless self.checker.options[:from_stash]
-      checker.progress(1, "Reading stash file: #{stash_filepath.inspect}")
-      json = File.read(stash_filepath)
-      checker.progress(1, "Read stash file: #{stash_filepath.inspect}")
-      self.checker = JSON.parse(json, create_additions: true)
-      # Merge in the options for reporting (from the CLI).
-      self.checker.options.merge!(options)
-    end
-    # Put checker paths onto Report object.
     self.paths = self.checker.paths
     # Verify links.
     verify_links

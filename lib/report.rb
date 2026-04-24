@@ -103,8 +103,8 @@ EOT
     f = File.open(report_filepath, 'w')
     doc.write(f, 2)
     f.close
-    report_filepath
     checker.progress(1, "Created report at #{report_filepath}.")
+    report_filepath
   end
 
   def add_title(body)

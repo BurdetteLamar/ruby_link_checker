@@ -62,19 +62,20 @@ class RubyLinkChecker
   def initialize(paths = {}, times = {}, options = DEFAULT_OPTIONS)
     # Options keys from CLI are already symbols;
     # those from JSON are strings, so transform to symbols.
-    options.transform_keys! {|old_key| old_key.to_sym }
-    self.options = DEFAULT_OPTIONS.merge(options)
+    transformed_options = options.transform_keys {|old_key| old_key.to_sym }
+    self.options = DEFAULT_OPTIONS.merge(transformed_options)
     check_options(self.options)
     if self.options[:no_op]
       puts 'Options:'
-      options.each_pair do |key, value|
+      self.options.each_pair do |key, value|
         puts "  #{key}: #{value}"
       end
       return
     end
-    self.progress_level = %w[quiet minimal moderate debug].index(options[:verbosity])
+    self.progress_level = %w[quiet minimal moderate debug].index(self.options[:verbosity])
+    p self.progress_level
     message = 'Created RubyLinkChecker'
-    if options[:from_stash]
+    if self.options[:from_stash]
       message += ' from stash.'
     else
       message += ' from source.'
@@ -82,15 +83,14 @@ class RubyLinkChecker
     progress(1, message)
     self.paths = paths
     self.times = times
-    self.options = options
-    self.source_type, self.source = get_source(options[:source])
-    if options[:no_op]
+    self.source_type, self.source = get_source(self.options[:source])
+    if self.options[:no_op]
       progress(1, "No-op competed.")
       exit
     end
-    create_stash unless options[:report_only]
+    create_stash unless self.options[:report_only]
     report_filepath = Report.new.create_report(self, options)
-    if options[:open_report]
+    if self.options[:open_report]
        command = "start #{report_filepath}"
        system(command)
     end
@@ -168,7 +168,7 @@ class RubyLinkChecker
   end
 
   def progress(level, message)
-    puts message unless progress_level < level
+    puts message unless self.progress_level < level
   end
 
   def to_json(*args)

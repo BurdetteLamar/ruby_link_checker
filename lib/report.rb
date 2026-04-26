@@ -18,7 +18,7 @@ class Report
 .good      { color: rgb(  0,  97,   0); background-color: rgb(198, 239, 206) } /* Green */
 .iffy      { color: rgb(156, 101,   0); background-color: rgb(255, 235, 156) } /* Yellow */
 .bad       { color: rgb(156,   0,   6); background-color: rgb(255, 199, 206) } /* Red */
-.unchecked { color: rgb(  0,   0, 255); background-color: rgb(135, 206, 250) } /* Blue */
+.unchecked { color: rgb(  0,   0,  97); background-color: rgb(198, 206, 239) } /* Blue */
 .info      { color: rgb(  0,   0,   0); background-color: rgb(217, 217, 214) } /* Gray */
 .header    { color: rgb(255, 255, 255); background-color: rgb(  0,   0,   0) } /* White on black */
 EOT
@@ -58,7 +58,6 @@ EOT
     recent_dirname = Dir.new(dirpath).entries.last
     recent_dirpath = File.join(dirpath, recent_dirname)
     self.paths = self.checker.paths
-    # Verify links.
     verify_links
     
     report_filename = 'report.html'
